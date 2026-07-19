@@ -27,6 +27,32 @@ const MOCK_ACCOUNTS: (AuthUser & { password: string })[] = [
 ]
 
 // ============================================================
+// HERO CONTEXT
+// ============================================================
+type HeroSlide = {
+  id: number
+  title: string
+  subtitle: string
+  desc: string
+  image: string      // Unsplash photo ID or full https:// URL
+  btn1: string
+  btn1Link: string
+  btn2: string
+  btn2Link: string
+}
+
+const DEFAULT_HERO_SLIDES: HeroSlide[] = [
+  { id: 1, title: "Chợ Phiên Ngok Bay", subtitle: "Nơi hội tụ tinh hoa văn hóa Bana", desc: "Khám phá thổ cẩm dệt tay, nông sản sạch và nhạc cụ truyền thống từ vùng cao Kon Tum", image: "photo-1506905925346-21bda4d32df4", btn1: "Khám phá ngay", btn1Link: "/san-pham", btn2: "Xem chợ phiên", btn2Link: "/lich-cho-phien" },
+  { id: 2, title: "Thổ cẩm Bana", subtitle: "Di sản dệt tay truyền đời", desc: "Mỗi tấm vải là một câu chuyện, được dệt nên từ đôi tay khéo léo của những nghệ nhân Bana qua nhiều thế hệ", image: "photo-1558618666-fcd25c85cd64", btn1: "Xem thổ cẩm", btn1Link: "/tho-cam", btn2: "Gặp nghệ nhân", btn2Link: "/van-hoa" },
+  { id: 3, title: "Sản phẩm OCOP 4-5★", subtitle: "Chứng nhận chất lượng quốc gia", desc: "Tuyển chọn những sản phẩm đạt tiêu chuẩn OCOP cao nhất, đảm bảo chất lượng và an toàn cho người tiêu dùng", image: "photo-1447933601403-0c6688de566e", btn1: "Xem OCOP", btn1Link: "/ocop", btn2: "Tìm hiểu thêm", btn2Link: "/van-hoa" },
+]
+
+import { createContext, useContext } from "react"
+type HeroContextType = { slides: HeroSlide[]; setSlides: React.Dispatch<React.SetStateAction<HeroSlide[]>> }
+const HeroContext = createContext<HeroContextType>({ slides: DEFAULT_HERO_SLIDES, setSlides: () => {} })
+const useHero = () => useContext(HeroContext)
+
+// ============================================================
 // MOCK DATA
 // ============================================================
 
@@ -551,61 +577,74 @@ function Footer() {
 // ============================================================
 // HOME PAGE
 // ============================================================
-const HERO_SLIDES = [
-  { title: "Chợ Phiên Ngok Bay", subtitle: "Nơi hội tụ tinh hoa văn hóa Bana", desc: "Khám phá thổ cẩm dệt tay, nông sản sạch và nhạc cụ truyền thống từ vùng cao Kon Tum", image: "photo-1506905925346-21bda4d32df4", btn1: "Khám phá ngay", btn2: "Xem chợ phiên" },
-  { title: "Thổ cẩm Bana", subtitle: "Di sản dệt tay truyền đời", desc: "Mỗi tấm vải là một câu chuyện, được dệt nên từ đôi tay khéo léo của những nghệ nhân Bana qua nhiều thế hệ", image: "photo-1558618666-fcd25c85cd64", btn1: "Xem thổ cẩm", btn2: "Gặp nghệ nhân" },
-  { title: "Sản phẩm OCOP 4-5★", subtitle: "Chứng nhận chất lượng quốc gia", desc: "Tuyển chọn những sản phẩm đạt tiêu chuẩn OCOP cao nhất, đảm bảo chất lượng và an toàn cho người tiêu dùng", image: "photo-1447933601403-0c6688de566e", btn1: "Xem OCOP", btn2: "Tìm hiểu thêm" },
-]
+// hero slides are now managed via HeroContext — see DEFAULT_HERO_SLIDES above
+
+function HeroSection() {
+  const { slides } = useHero()
+  const [slideIdx, setSlideIdx] = useState(0)
+  const navigate = useNavigate()
+
+  // Reset slide index if slides shrink
+  useEffect(() => {
+    if (slideIdx >= slides.length) setSlideIdx(0)
+  }, [slides.length, slideIdx])
+
+  useEffect(() => {
+    if (slides.length === 0) return
+    const t = setInterval(() => setSlideIdx(i => (i + 1) % slides.length), 5000)
+    return () => clearInterval(t)
+  }, [slides.length])
+
+  if (slides.length === 0) return null
+  const s = slides[slideIdx]
+  const heroImgSrc = s.image.startsWith("http") ? s.image : img(s.image, 1600, 900)
+
+  return (
+    <section className="relative h-screen min-h-[600px] flex items-center overflow-hidden">
+      <div className="absolute inset-0 bg-foreground/50 z-10" />
+      <img key={heroImgSrc} src={heroImgSrc} alt="Hero" className="absolute inset-0 w-full h-full object-cover transition-all duration-700" />
+      <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+        <div className="max-w-2xl">
+          <span className="inline-block text-xs uppercase tracking-[0.2em] text-accent font-semibold font-body mb-4 bg-accent/20 px-3 py-1 rounded-full border border-accent/30">{s.subtitle}</span>
+          <h1 className="font-display text-5xl md:text-7xl font-bold text-white leading-tight mb-5">{s.title}</h1>
+          <p className="font-body text-white/80 text-lg leading-relaxed mb-8 max-w-lg">{s.desc}</p>
+          <div className="flex flex-wrap gap-4">
+            <button onClick={() => navigate(s.btn1Link || "/san-pham")} className="bg-accent text-accent-foreground px-7 py-3.5 rounded-2xl font-semibold hover:bg-accent/80 transition-all hover:scale-105 font-body flex items-center gap-2">
+              {s.btn1} <ArrowRight size={16} />
+            </button>
+            <button onClick={() => navigate(s.btn2Link || "/lich-cho-phien")} className="bg-white/20 backdrop-blur-sm text-white px-7 py-3.5 rounded-2xl font-semibold hover:bg-white/30 transition-all border border-white/30 font-body">
+              {s.btn2}
+            </button>
+          </div>
+        </div>
+      </div>
+      {/* Dots */}
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+        {slides.map((_, i) => (
+          <button key={i} onClick={() => setSlideIdx(i)} className={`transition-all ${i === slideIdx ? "w-8 h-2 bg-accent" : "w-2 h-2 bg-white/50"} rounded-full`} />
+        ))}
+      </div>
+      <button onClick={() => setSlideIdx(i => (i - 1 + slides.length) % slides.length)} className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/40 transition-colors">
+        <ChevronLeft size={18} />
+      </button>
+      <button onClick={() => setSlideIdx(i => (i + 1) % slides.length)} className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/40 transition-colors">
+        <ChevronRight size={18} />
+      </button>
+    </section>
+  )
+}
 
 function HomePage({ onAddCart }: { onAddCart: (p: any) => void }) {
-  const [slide, setSlide] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const navigate = useNavigate()
 
-  useEffect(() => {
-    setTimeout(() => setIsLoading(false), 600)
-    const t = setInterval(() => setSlide(s => (s + 1) % HERO_SLIDES.length), 5000)
-    return () => clearInterval(t)
-  }, [])
-
+  useEffect(() => { setTimeout(() => setIsLoading(false), 600) }, [])
   if (isLoading) return <div className="pt-16"><Loading /></div>
-
-  const s = HERO_SLIDES[slide]
 
   return (
     <main>
-      {/* Hero */}
-      <section className="relative h-screen min-h-[600px] flex items-center overflow-hidden">
-        <div className="absolute inset-0 bg-foreground/50 z-10" />
-        <img src={img(s.image, 1600, 900)} alt="Hero" className="absolute inset-0 w-full h-full object-cover transition-all duration-700" />
-        <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-          <div className="max-w-2xl">
-            <span className="inline-block text-xs uppercase tracking-[0.2em] text-accent font-semibold font-body mb-4 bg-accent/20 px-3 py-1 rounded-full border border-accent/30">{s.subtitle}</span>
-            <h1 className="font-display text-5xl md:text-7xl font-bold text-white leading-tight mb-5">{s.title}</h1>
-            <p className="font-body text-white/80 text-lg leading-relaxed mb-8 max-w-lg">{s.desc}</p>
-            <div className="flex flex-wrap gap-4">
-              <button onClick={() => navigate("/san-pham")} className="bg-accent text-accent-foreground px-7 py-3.5 rounded-2xl font-semibold hover:bg-accent/80 transition-all hover:scale-105 font-body flex items-center gap-2">
-                {s.btn1} <ArrowRight size={16} />
-              </button>
-              <button onClick={() => navigate("/lich-cho-phien")} className="bg-white/20 backdrop-blur-sm text-white px-7 py-3.5 rounded-2xl font-semibold hover:bg-white/30 transition-all border border-white/30 font-body">
-                {s.btn2}
-              </button>
-            </div>
-          </div>
-        </div>
-        {/* Slide controls */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-2">
-          {HERO_SLIDES.map((_, i) => (
-            <button key={i} onClick={() => setSlide(i)} className={`transition-all ${i === slide ? "w-8 h-2 bg-accent" : "w-2 h-2 bg-white/50"} rounded-full`} />
-          ))}
-        </div>
-        <button onClick={() => setSlide(s => (s - 1 + HERO_SLIDES.length) % HERO_SLIDES.length)} className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/40 transition-colors">
-          <ChevronLeft size={18} />
-        </button>
-        <button onClick={() => setSlide(s => (s + 1) % HERO_SLIDES.length)} className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/40 transition-colors">
-          <ChevronRight size={18} />
-        </button>
-      </section>
+      {/* Hero — driven by HeroContext */}
+      <HeroSection />
 
       {/* Categories */}
       <section className="py-20 bg-background">
@@ -1759,38 +1798,107 @@ function LienHePage() {
 // ============================================================
 function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [webMgmtOpen, setWebMgmtOpen] = useState(false)
+  const [topbarDropOpen, setTopbarDropOpen] = useState(false)
+  const topbarDropRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
 
+  // Close topbar dropdown on outside click
+  useEffect(() => {
+    const h = (e: MouseEvent) => {
+      if (topbarDropRef.current && !topbarDropRef.current.contains(e.target as Node)) setTopbarDropOpen(false)
+    }
+    document.addEventListener("mousedown", h)
+    return () => document.removeEventListener("mousedown", h)
+  }, [])
+
   const navItems = [
-    { to: "/admin", icon: BarChart2, label: "Tổng quan" },
-    { to: "/admin/san-pham", icon: Package, label: "Sản phẩm" },
-    { to: "/admin/cho-phien", icon: Calendar, label: "Chợ phiên" },
-    { to: "/admin/blog", icon: FileText, label: "Bài viết" },
-    { to: "/admin/don-hang", icon: ShoppingBag, label: "Đơn hàng" },
-    { to: "/admin/nguoi-dung", icon: Users, label: "Người dùng" },
+    { to: "/admin",            icon: BarChart2,  label: "Tổng quan",     end: true },
+    { to: "/admin/san-pham",   icon: Package,    label: "Sản phẩm",      end: false },
+    { to: "/admin/cho-phien",  icon: Calendar,   label: "Chợ phiên",     end: false },
+    { to: "/admin/blog",       icon: FileText,   label: "Bài viết",      end: false },
+    { to: "/admin/don-hang",   icon: ShoppingBag,label: "Đơn hàng",      end: false },
+    { to: "/admin/nguoi-dung", icon: Users,      label: "Người dùng",    end: false },
+  ]
+
+  const webSubItems = [
+    { to: "/admin/hero", icon: ImageIcon, label: "Chỉnh sửa Hero" },
   ]
 
   return (
     <div className="min-h-screen bg-muted flex">
-      {/* Sidebar */}
+      {/* ── Sidebar ── */}
       <aside className={`${sidebarOpen ? "w-60" : "w-16"} bg-sidebar flex-shrink-0 flex flex-col transition-all duration-300 min-h-screen`}>
+        {/* Logo */}
         <div className="p-4 flex items-center gap-3 border-b border-sidebar-border h-16">
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
             <Leaf size={16} className="text-primary-foreground" />
           </div>
-          {sidebarOpen && <div className="min-w-0"><div className="font-display font-bold text-sidebar-foreground text-sm truncate">Ngok Bay</div><div className="text-xs text-sidebar-foreground/50 font-body">Admin Panel</div></div>}
+          {sidebarOpen && (
+            <div className="min-w-0">
+              <div className="font-display font-bold text-sidebar-foreground text-sm truncate">Ngok Bay</div>
+              <div className="text-xs text-sidebar-foreground/50 font-body">Admin Panel</div>
+            </div>
+          )}
         </div>
 
-        <nav className="flex-1 p-3 space-y-1">
+        <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
+          {/* Regular nav items */}
           {navItems.map(item => (
-            <NavLink key={item.to} to={item.to} end={item.to === "/admin"}
+            <NavLink key={item.to} to={item.to} end={item.end}
               className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${isActive ? "bg-sidebar-primary text-sidebar-primary-foreground" : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"}`}>
               <item.icon size={18} className="flex-shrink-0" />
               {sidebarOpen && <span className="text-sm font-medium font-body">{item.label}</span>}
             </NavLink>
           ))}
+
+          {/* Divider */}
+          <div className="my-2 border-t border-sidebar-border" />
+
+          {/* Quản lý web — collapsible group */}
+          <div>
+            <button
+              onClick={() => setWebMgmtOpen(v => !v)}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground ${webMgmtOpen ? "bg-sidebar-accent text-sidebar-foreground" : ""}`}
+              title={!sidebarOpen ? "Quản lý web" : undefined}
+            >
+              <Globe size={18} className="flex-shrink-0" />
+              {sidebarOpen && (
+                <>
+                  <span className="text-sm font-medium font-body flex-1 text-left">Quản lý web</span>
+                  <ChevronDown size={14} className={`transition-transform duration-200 ${webMgmtOpen ? "rotate-180" : ""}`} />
+                </>
+              )}
+            </button>
+
+            {/* Sub-items (only visible when sidebar is open) */}
+            {webMgmtOpen && sidebarOpen && (
+              <div className="ml-3 mt-1 space-y-0.5 border-l-2 border-sidebar-border pl-3">
+                {webSubItems.map(sub => (
+                  <NavLink key={sub.to} to={sub.to}
+                    className={({ isActive }) => `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-body transition-colors ${isActive ? "bg-sidebar-primary text-sidebar-primary-foreground font-semibold" : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"}`}>
+                    <sub.icon size={14} className="flex-shrink-0" />
+                    {sub.label}
+                  </NavLink>
+                ))}
+              </div>
+            )}
+
+            {/* Collapsed icon-only sub-items */}
+            {webMgmtOpen && !sidebarOpen && (
+              <div className="mt-1 space-y-0.5">
+                {webSubItems.map(sub => (
+                  <NavLink key={sub.to} to={sub.to} title={sub.label}
+                    className={({ isActive }) => `flex items-center justify-center p-2.5 rounded-xl transition-colors ${isActive ? "bg-sidebar-primary text-sidebar-primary-foreground" : "text-sidebar-foreground/60 hover:bg-sidebar-accent"}`}>
+                    <sub.icon size={15} />
+                  </NavLink>
+                ))}
+              </div>
+            )}
+          </div>
         </nav>
 
+        {/* Logout */}
         <div className="p-3 border-t border-sidebar-border">
           <button onClick={() => navigate("/")} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors">
             <LogOut size={18} className="flex-shrink-0" />
@@ -1799,7 +1907,7 @@ function AdminLayout() {
         </div>
       </aside>
 
-      {/* Main */}
+      {/* ── Main content ── */}
       <div className="flex-1 min-w-0 flex flex-col">
         {/* Topbar */}
         <header className="h-16 bg-card border-b border-border flex items-center justify-between px-6 sticky top-0 z-30">
@@ -1809,7 +1917,61 @@ function AdminLayout() {
             </button>
             <h2 className="font-semibold text-foreground font-body text-sm hidden sm:block">Chào mừng, Admin!</h2>
           </div>
+
           <div className="flex items-center gap-2">
+            {/* Quản lý web topbar dropdown */}
+            <div className="relative" ref={topbarDropRef}>
+              <button
+                onClick={() => setTopbarDropOpen(v => !v)}
+                className={`hidden md:flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold font-body transition-all border ${topbarDropOpen ? "bg-primary text-primary-foreground border-primary" : "border-border text-foreground hover:bg-muted"}`}
+              >
+                <Globe size={15} />
+                Quản lý web
+                <ChevronDown size={13} className={`transition-transform ${topbarDropOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              {topbarDropOpen && (
+                <div className="absolute right-0 top-full mt-2 w-52 bg-card border border-border rounded-2xl shadow-xl overflow-hidden z-50 py-1">
+                  <div className="px-4 py-2 border-b border-border">
+                    <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground font-body">Giao diện website</p>
+                  </div>
+                  <div className="py-1">
+                    <button
+                      onClick={() => { navigate("/admin/hero"); setTopbarDropOpen(false) }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-body text-foreground hover:bg-muted transition-colors text-left"
+                    >
+                      <div className="w-8 h-8 bg-accent/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <ImageIcon size={14} className="text-accent" />
+                      </div>
+                      <div>
+                        <p className="font-semibold leading-tight">Chỉnh sửa Hero</p>
+                        <p className="text-xs text-muted-foreground">Slider, tiêu đề, nút CTA</p>
+                      </div>
+                    </button>
+                    {/* Placeholder items for future expansion */}
+                    <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-body text-muted-foreground hover:bg-muted/50 transition-colors text-left opacity-50 cursor-not-allowed">
+                      <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
+                        <Layers size={14} />
+                      </div>
+                      <div>
+                        <p className="font-semibold leading-tight">Banner danh mục</p>
+                        <p className="text-xs">Sắp ra mắt</p>
+                      </div>
+                    </button>
+                    <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-body text-muted-foreground hover:bg-muted/50 transition-colors text-left opacity-50 cursor-not-allowed">
+                      <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
+                        <Settings size={14} />
+                      </div>
+                      <div>
+                        <p className="font-semibold leading-tight">Cài đặt chung</p>
+                        <p className="text-xs">Sắp ra mắt</p>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <button className="relative p-2 rounded-lg hover:bg-muted transition-colors">
               <Bell size={18} className="text-foreground" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-accent rounded-full" />
@@ -2459,6 +2621,313 @@ function Shield({ size = 18, className = "" }: { size?: number; className?: stri
 // MAIN APP
 // ============================================================
 // ============================================================
+// ADMIN HERO FORM
+// ============================================================
+const UNSPLASH_PRESETS = [
+  { label: "Rừng núi", id: "photo-1506905925346-21bda4d32df4" },
+  { label: "Thổ cẩm", id: "photo-1558618666-fcd25c85cd64" },
+  { label: "Nông sản", id: "photo-1447933601403-0c6688de566e" },
+  { label: "Tre đan", id: "photo-1503676260728-1c00da094a0b" },
+  { label: "Cà phê", id: "photo-1512621776951-a57141f2eefd" },
+  { label: "Văn hóa", id: "photo-1511379938547-c1f69419868d" },
+]
+
+function AdminHeroForm() {
+  const { slides, setSlides } = useHero()
+
+  // Working copy — only commit to context on Save
+  const [draft, setDraft] = useState<HeroSlide[]>(() => JSON.parse(JSON.stringify(slides)))
+  const [activeId, setActiveId] = useState(draft[0]?.id ?? 1)
+  const [saved, setSaved] = useState(false)
+  const [imageMode, setImageMode] = useState<"preset" | "url">("preset")
+
+  const active = draft.find(s => s.id === activeId) ?? draft[0]
+
+  const updateField = (field: keyof HeroSlide, value: string) => {
+    setDraft(d => d.map(s => s.id === activeId ? { ...s, [field]: value } : s))
+    setSaved(false)
+  }
+
+  const addSlide = () => {
+    const newId = Math.max(0, ...draft.map(s => s.id)) + 1
+    const newSlide: HeroSlide = {
+      id: newId,
+      title: "Tiêu đề mới",
+      subtitle: "Mô tả phụ",
+      desc: "Nội dung mô tả cho slide mới",
+      image: "photo-1506905925346-21bda4d32df4",
+      btn1: "Khám phá",
+      btn1Link: "/san-pham",
+      btn2: "Tìm hiểu",
+      btn2Link: "/van-hoa",
+    }
+    setDraft(d => [...d, newSlide])
+    setActiveId(newId)
+    setSaved(false)
+  }
+
+  const deleteSlide = (id: number) => {
+    if (draft.length <= 1) { toast.error("Phải có ít nhất 1 slide"); return }
+    const next = draft.find(s => s.id !== id)
+    setDraft(d => d.filter(s => s.id !== id))
+    if (activeId === id && next) setActiveId(next.id)
+    setSaved(false)
+  }
+
+  const handleSave = () => {
+    setSlides(JSON.parse(JSON.stringify(draft)))
+    setSaved(true)
+    toast.success("Đã lưu Hero section!", { description: "Thay đổi đã được áp dụng lên trang chủ ngay lập tức." })
+  }
+
+  const handleReset = () => {
+    setDraft(JSON.parse(JSON.stringify(DEFAULT_HERO_SLIDES)))
+    setActiveId(DEFAULT_HERO_SLIDES[0].id)
+    setSlides(JSON.parse(JSON.stringify(DEFAULT_HERO_SLIDES)))
+    setSaved(true)
+    toast.success("Đã khôi phục dữ liệu mặc định")
+  }
+
+  const previewImgSrc = active
+    ? (active.image.startsWith("http") ? active.image : img(active.image, 1200, 500))
+    : ""
+
+  return (
+    <div>
+      {/* Page header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="font-display text-3xl font-bold text-foreground">Chỉnh sửa Hero Section</h1>
+          <p className="text-muted-foreground font-body text-sm mt-1">Thay đổi sẽ áp dụng ngay lên trang chủ khi bấm Lưu</p>
+        </div>
+        <div className="flex gap-3">
+          <button onClick={handleReset} className="flex items-center gap-2 px-4 py-2.5 border border-border rounded-xl text-sm font-semibold font-body text-foreground hover:bg-muted transition-colors">
+            <ChevronLeft size={14} /> Khôi phục mặc định
+          </button>
+          <button onClick={handleSave} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold font-body transition-all ${saved ? "bg-primary/20 text-primary" : "bg-primary text-primary-foreground hover:bg-primary/80"}`}>
+            {saved ? <><Check size={14} /> Đã lưu</> : <><CheckCircle size={14} /> Lưu thay đổi</>}
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        {/* LEFT: slide list + form */}
+        <div className="xl:col-span-2 space-y-5">
+
+          {/* Slide tabs */}
+          <div className="bg-card rounded-2xl border border-border p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-foreground font-body flex items-center gap-2">
+                <Layers size={16} className="text-accent" /> Danh sách slides ({draft.length})
+              </h3>
+              <button onClick={addSlide} className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-xs font-semibold font-body hover:bg-primary/20 transition-colors">
+                <Plus size={13} /> Thêm slide
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {draft.map((s, i) => (
+                <div key={s.id} className="relative group">
+                  <button onClick={() => setActiveId(s.id)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold font-body transition-all border ${activeId === s.id ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-foreground border-border hover:border-primary/50"}`}>
+                    <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${activeId === s.id ? "bg-primary-foreground/20" : "bg-border"}`}>{i + 1}</span>
+                    <span className="max-w-[100px] truncate">{s.title}</span>
+                  </button>
+                  {draft.length > 1 && (
+                    <button onClick={() => deleteSlide(s.id)}
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full hidden group-hover:flex items-center justify-center shadow-md hover:bg-red-600 transition-colors z-10">
+                      <X size={10} />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {active && (
+            <div className="bg-card rounded-2xl border border-border p-6 space-y-5">
+              <h3 className="font-semibold text-foreground font-body flex items-center gap-2 pb-1 border-b border-border">
+                <Edit size={15} className="text-accent" /> Slide {draft.findIndex(s => s.id === activeId) + 1}: Nội dung
+              </h3>
+
+              {/* Title */}
+              <FormField label="Tiêu đề chính (Hero title)" required>
+                <input value={active.title} onChange={e => updateField("title", e.target.value)}
+                  placeholder="Chợ Phiên Ngok Bay"
+                  className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground font-body text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
+              </FormField>
+
+              {/* Subtitle */}
+              <FormField label="Mô tả phụ (subtitle)">
+                <input value={active.subtitle} onChange={e => updateField("subtitle", e.target.value)}
+                  placeholder="Nơi hội tụ tinh hoa văn hóa Bana"
+                  className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground font-body text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
+              </FormField>
+
+              {/* Description */}
+              <FormField label="Mô tả nội dung">
+                <textarea value={active.desc} onChange={e => updateField("desc", e.target.value)} rows={3}
+                  placeholder="Khám phá thổ cẩm dệt tay, nông sản sạch..."
+                  className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground font-body text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none" />
+              </FormField>
+
+              {/* Buttons */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold uppercase tracking-wide text-accent font-body">Nút chính</h4>
+                  <FormField label="Nội dung nút" required>
+                    <input value={active.btn1} onChange={e => updateField("btn1", e.target.value)}
+                      placeholder="Khám phá ngay"
+                      className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground font-body text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
+                  </FormField>
+                  <FormField label="Đường dẫn (link)" required>
+                    <input value={active.btn1Link} onChange={e => updateField("btn1Link", e.target.value)}
+                      placeholder="/san-pham"
+                      className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground font-body text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
+                  </FormField>
+                </div>
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold uppercase tracking-wide text-muted-foreground font-body">Nút phụ</h4>
+                  <FormField label="Nội dung nút">
+                    <input value={active.btn2} onChange={e => updateField("btn2", e.target.value)}
+                      placeholder="Xem chợ phiên"
+                      className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground font-body text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
+                  </FormField>
+                  <FormField label="Đường dẫn (link)">
+                    <input value={active.btn2Link} onChange={e => updateField("btn2Link", e.target.value)}
+                      placeholder="/lich-cho-phien"
+                      className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground font-body text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
+                  </FormField>
+                </div>
+              </div>
+
+              {/* Image */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-sm font-medium text-foreground font-body">Ảnh nền Hero <span className="text-accent">*</span></label>
+                  <div className="flex rounded-lg border border-border overflow-hidden">
+                    {(["preset", "url"] as const).map(m => (
+                      <button key={m} onClick={() => setImageMode(m)}
+                        className={`px-3 py-1.5 text-xs font-semibold font-body transition-colors ${imageMode === m ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted"}`}>
+                        {m === "preset" ? "Chọn mẫu" : "Nhập URL"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {imageMode === "preset" ? (
+                  <div className="grid grid-cols-3 gap-2">
+                    {UNSPLASH_PRESETS.map(p => (
+                      <button key={p.id} onClick={() => updateField("image", p.id)}
+                        className={`relative rounded-xl overflow-hidden aspect-video border-2 transition-all ${active.image === p.id ? "border-primary shadow-lg scale-95" : "border-border hover:border-primary/50"}`}>
+                        <img src={img(p.id, 300, 170)} alt={p.label} className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/30 flex items-end p-1.5">
+                          <span className="text-white text-xs font-bold font-body">{p.label}</span>
+                        </div>
+                        {active.image === p.id && (
+                          <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                            <Check size={10} className="text-primary-foreground" />
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <input value={active.image} onChange={e => updateField("image", e.target.value)}
+                      placeholder="https://images.unsplash.com/photo-... hoặc Unsplash ID"
+                      className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground font-body text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
+                    <p className="text-xs text-muted-foreground font-body">Nhập URL đầy đủ hoặc Unsplash photo ID (vd: photo-1506905925346-21bda4d32df4)</p>
+
+                    {/* Mock upload */}
+                    <div className="border-2 border-dashed border-border rounded-xl p-5 text-center cursor-pointer hover:border-primary transition-colors group"
+                      onClick={() => updateField("image", UNSPLASH_PRESETS[Math.floor(Math.random() * UNSPLASH_PRESETS.length)].id)}>
+                      <ImageIcon size={22} className="text-muted-foreground mx-auto mb-1.5 group-hover:text-primary transition-colors" />
+                      <p className="text-sm text-muted-foreground font-body group-hover:text-primary transition-colors">Upload ảnh (mock — click để chọn ngẫu nhiên)</p>
+                      <p className="text-xs text-muted-foreground font-body mt-0.5">JPG, PNG, WebP · Tối đa 5MB</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* RIGHT: live preview */}
+        <div className="space-y-4">
+          <div className="bg-card rounded-2xl border border-border p-5 sticky top-24">
+            <h3 className="font-semibold text-foreground font-body mb-4 flex items-center gap-2">
+              <Eye size={15} className="text-accent" /> Xem trước
+            </h3>
+
+            {active && (
+              <div className="rounded-xl overflow-hidden relative aspect-video bg-muted">
+                <img src={previewImgSrc} alt="preview" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-foreground/50" />
+                <div className="absolute inset-0 p-4 flex flex-col justify-end">
+                  <span className="inline-block text-[9px] uppercase tracking-widest text-accent font-semibold font-body mb-1.5 bg-accent/20 px-2 py-0.5 rounded-full w-fit border border-accent/30">
+                    {active.subtitle || "Mô tả phụ"}
+                  </span>
+                  <h2 className="font-display font-bold text-white text-sm leading-tight mb-1.5 line-clamp-2">
+                    {active.title || "Tiêu đề"}
+                  </h2>
+                  <p className="text-white/70 text-[10px] font-body line-clamp-2 mb-2">{active.desc}</p>
+                  <div className="flex gap-2">
+                    <span className="bg-accent text-white text-[9px] font-bold px-2.5 py-1 rounded-lg font-body">{active.btn1 || "Nút 1"}</span>
+                    <span className="bg-white/20 text-white text-[9px] font-semibold px-2.5 py-1 rounded-lg border border-white/30 font-body">{active.btn2 || "Nút 2"}</span>
+                  </div>
+                </div>
+
+                {/* Slide indicator dots preview */}
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                  {draft.map((s, i) => (
+                    <div key={s.id} className={`transition-all rounded-full ${s.id === activeId ? "w-4 h-1.5 bg-accent" : "w-1.5 h-1.5 bg-white/50"}`} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Slide nav summary */}
+            <div className="mt-4 space-y-2">
+              {draft.map((s, i) => (
+                <button key={s.id} onClick={() => setActiveId(s.id)}
+                  className={`w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-all ${s.id === activeId ? "bg-primary/10 border border-primary/30" : "hover:bg-muted border border-transparent"}`}>
+                  <div className="w-8 h-8 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                    <img src={s.image.startsWith("http") ? s.image : img(s.image, 80, 80)} alt="" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-foreground font-body truncate">{s.title}</p>
+                    <p className="text-[10px] text-muted-foreground font-body">Slide {i + 1}</p>
+                  </div>
+                  {s.id === activeId && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />}
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-5 pt-4 border-t border-border text-xs text-muted-foreground font-body space-y-1">
+              <p className="flex items-center gap-1.5"><CheckCircle size={11} className="text-primary" /> Dữ liệu lưu trong bộ nhớ (mock)</p>
+              <p className="flex items-center gap-1.5"><CheckCircle size={11} className="text-primary" /> Cập nhật trang chủ ngay lập tức</p>
+              <p className="flex items-center gap-1.5"><AlertCircle size={11} className="text-muted-foreground" /> Reload trang sẽ khôi phục mặc định</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Helper form field wrapper
+function FormField({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-foreground font-body mb-1.5">
+        {label} {required && <span className="text-accent">*</span>}
+      </label>
+      {children}
+    </div>
+  )
+}
+
+// ============================================================
 // PROTECTED ADMIN ROUTE
 // ============================================================
 function ProtectedAdminRoute({ user }: { user: AuthUser | null }) {
@@ -2484,8 +2953,9 @@ function ProtectedAdminRoute({ user }: { user: AuthUser | null }) {
 // ============================================================
 export default function App() {
   const [darkMode, setDarkMode] = useState(false)
-  const [cart, setCart] = useState<any[]>([])
-  const [user, setUser] = useState<AuthUser | null>(null)
+  const [cart, setCart]         = useState<any[]>([])
+  const [user, setUser]         = useState<AuthUser | null>(null)
+  const [heroSlides, setHeroSlides] = useState<HeroSlide[]>(DEFAULT_HERO_SLIDES)
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode)
@@ -2502,50 +2972,52 @@ export default function App() {
   const cartCount = cart.reduce((acc, i) => acc + i.qty, 0)
 
   return (
-    <BrowserRouter>
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          style: { fontFamily: "var(--font-body, 'Be Vietnam Pro', system-ui, sans-serif)", borderRadius: "1rem" },
-        }}
-        richColors
-      />
-      <div className="min-h-screen bg-background" style={{ fontFamily: "var(--font-body, 'Be Vietnam Pro', system-ui, sans-serif)" }}>
-        <Routes>
-          {/* Protected Admin routes */}
-          <Route path="/admin" element={<ProtectedAdminRoute user={user} />}>
-            <Route element={<AdminLayout />}>
-              <Route index element={<AdminDashboard />} />
-              <Route path="san-pham" element={<AdminProductPage />} />
-              <Route path="cho-phien" element={<AdminMarketPage />} />
-              <Route path="blog" element={<AdminBlogPage />} />
-              <Route path="don-hang" element={<AdminOrderPage />} />
-              <Route path="nguoi-dung" element={<AdminUserPage />} />
+    <HeroContext.Provider value={{ slides: heroSlides, setSlides: setHeroSlides }}>
+      <BrowserRouter>
+        <Toaster
+          position="top-right"
+          toastOptions={{ style: { fontFamily: "var(--font-body, 'Be Vietnam Pro', system-ui, sans-serif)", borderRadius: "1rem" } }}
+          richColors
+        />
+        <div className="min-h-screen bg-background" style={{ fontFamily: "var(--font-body, 'Be Vietnam Pro', system-ui, sans-serif)" }}>
+          <Routes>
+            {/* ── Protected Admin routes ── */}
+            <Route path="/admin" element={<ProtectedAdminRoute user={user} />}>
+              <Route element={<AdminLayout />}>
+                <Route index          element={<AdminDashboard />} />
+                <Route path="san-pham"   element={<AdminProductPage />} />
+                <Route path="cho-phien"  element={<AdminMarketPage />} />
+                <Route path="blog"       element={<AdminBlogPage />} />
+                <Route path="don-hang"   element={<AdminOrderPage />} />
+                <Route path="nguoi-dung" element={<AdminUserPage />} />
+                {/* Quản lý web */}
+                <Route path="hero"       element={<AdminHeroForm />} />
+              </Route>
             </Route>
-          </Route>
 
-          {/* Public routes */}
-          <Route path="*" element={
-            <>
-              <Navbar cartCount={cartCount} darkMode={darkMode} onToggleDark={() => setDarkMode(v => !v)} user={user} onLogout={() => setUser(null)} />
-              <Routes>
-                <Route path="/" element={<HomePage onAddCart={addToCart} />} />
-                <Route path="/san-pham" element={<ProductListPage onAddCart={addToCart} />} />
-                <Route path="/san-pham/:id" element={<ProductDetailPage onAddCart={addToCart} />} />
-                <Route path="/tho-cam" element={<ThoCamPage />} />
-                <Route path="/ocop" element={<OCOPPage onAddCart={addToCart} />} />
-                <Route path="/van-hoa" element={<VanHoaPage />} />
-                <Route path="/lich-cho-phien" element={<LichChoPhienPage />} />
-                <Route path="/gio-hang" element={<CartPage cart={cart} setCart={setCart} />} />
-                <Route path="/thanh-toan" element={<CheckoutPage cart={cart} />} />
-                <Route path="/dang-nhap" element={<LoginPage onLogin={setUser} />} />
-                <Route path="/lien-he" element={<LienHePage />} />
-              </Routes>
-              <Footer />
-            </>
-          } />
-        </Routes>
-      </div>
-    </BrowserRouter>
+            {/* ── Public routes ── */}
+            <Route path="*" element={
+              <>
+                <Navbar cartCount={cartCount} darkMode={darkMode} onToggleDark={() => setDarkMode(v => !v)} user={user} onLogout={() => setUser(null)} />
+                <Routes>
+                  <Route path="/"               element={<HomePage onAddCart={addToCart} />} />
+                  <Route path="/san-pham"        element={<ProductListPage onAddCart={addToCart} />} />
+                  <Route path="/san-pham/:id"    element={<ProductDetailPage onAddCart={addToCart} />} />
+                  <Route path="/tho-cam"         element={<ThoCamPage />} />
+                  <Route path="/ocop"            element={<OCOPPage onAddCart={addToCart} />} />
+                  <Route path="/van-hoa"         element={<VanHoaPage />} />
+                  <Route path="/lich-cho-phien"  element={<LichChoPhienPage />} />
+                  <Route path="/gio-hang"        element={<CartPage cart={cart} setCart={setCart} />} />
+                  <Route path="/thanh-toan"      element={<CheckoutPage cart={cart} />} />
+                  <Route path="/dang-nhap"       element={<LoginPage onLogin={setUser} />} />
+                  <Route path="/lien-he"         element={<LienHePage />} />
+                </Routes>
+                <Footer />
+              </>
+            } />
+          </Routes>
+        </div>
+      </BrowserRouter>
+    </HeroContext.Provider>
   )
 }
