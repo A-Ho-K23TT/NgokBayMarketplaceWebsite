@@ -8,7 +8,8 @@ import {
   ChevronDown, Check, Minus, CreditCard, Truck, Tag, FileText,
   Music, Volume2, Globe, TrendingUp, ShoppingBag, Map, User, Lock,
   Moon, Sun, ExternalLink, Layers, AlertCircle, CheckCircle, Printer, ImageIcon,
-  ShieldAlert, LayoutDashboard, ListOrdered
+  ShieldAlert, LayoutDashboard, ListOrdered, FileDown, ClipboardList,
+  UserCheck, UserX, ToggleLeft, ToggleRight, Store, BadgeCheck
 } from "lucide-react"
 import { toast, Toaster } from "sonner"
 import {
@@ -53,6 +54,40 @@ const HeroContext = createContext<HeroContextType>({ slides: DEFAULT_HERO_SLIDES
 const useHero = () => useContext(HeroContext)
 
 // ============================================================
+// MARKET CONTEXT
+// ============================================================
+type Market = {
+  id: number; name: string
+  location: { province: string; district: string; commune: string; village: string; full: string }
+  mapUrl: string; startDate: string; endDate: string; time: string
+  description: string; categories: string[]; images: string[]
+  contact: { phone: string; email: string; fanpage: string }
+  registrationOpen: boolean; visible: boolean
+  vendors: number; expectedVisitors: number; highlights: string[]
+}
+
+type BoothRegistration = {
+  id: string; marketId: number; marketName: string
+  boothName: string; ownerName: string; phone: string; email: string
+  address: string; products: string; category: string
+  status: "pending" | "approved" | "rejected"
+  submittedAt: string; note: string
+}
+
+type MarketContextType = {
+  markets: Market[]
+  setMarkets: React.Dispatch<React.SetStateAction<Market[]>>
+  registrations: BoothRegistration[]
+  setRegistrations: React.Dispatch<React.SetStateAction<BoothRegistration[]>>
+}
+
+const MarketContext = createContext<MarketContextType>({
+  markets: [], setMarkets: () => {},
+  registrations: [], setRegistrations: () => {}
+})
+const useMarket = () => useContext(MarketContext)
+
+// ============================================================
 // MOCK DATA
 // ============================================================
 
@@ -78,10 +113,62 @@ const PRODUCTS = [
   { id: 12, name: "Cồng chiêng mini lưu niệm", price: 280000, originalPrice: 320000, category: "Nhạc cụ", ocop: null, image: "photo-1511379938547-c1f69419868d", artisan: "A Phúc", village: "Làng Kon Tum Kpâng", material: "Đồng đúc thủ công", size: "15cm", description: "Cồng chiêng mini đúc thủ công từ đồng nguyên chất, âm thanh vang xa. Lưu giữ tinh thần không gian văn hóa cồng chiêng Tây Nguyên.", rating: 4.6, reviews: 34, inStock: true, tags: ["Nhạc cụ", "Đồng"] },
 ]
 
-const MARKET_SCHEDULE = [
-  { id: 1, name: "Chợ Phiên Ngok Bay #47", date: "15/08/2025", time: "06:00 - 12:00", location: "Làng văn hóa Kon Klor, Kon Tum", vendors: 45, expectedVisitors: 500, highlights: ["Thổ cẩm mới", "Sâm Ngọc Linh", "Cồng chiêng biểu diễn"] },
-  { id: 2, name: "Chợ Phiên Ngok Bay #48", date: "20/09/2025", time: "06:00 - 12:00", location: "Quảng trường 16/3, TP Kon Tum", vendors: 60, expectedVisitors: 800, highlights: ["Lễ hội mùa màng", "Ẩm thực đặc sản", "Giao lưu văn hóa"] },
-  { id: 3, name: "Chợ Phiên Ngok Bay #49", date: "18/10/2025", time: "06:00 - 14:00", location: "Khuôn viên Làng du lịch Kon Tum", vendors: 70, expectedVisitors: 1000, highlights: ["Ngày hội thổ cẩm", "Trình diễn đan tre", "Ẩm thực truyền thống"] },
+const PRODUCT_CATEGORIES_LIST = [
+  "Nông sản", "Thực phẩm chế biến", "Thủ công mỹ nghệ",
+  "Trang phục truyền thống", "Gia súc gia cầm", "Đồ dùng sinh hoạt",
+  "Dịch vụ/Du lịch", "Khác"
+]
+
+const INITIAL_MARKETS = [
+  {
+    id: 1,
+    name: "Chợ Phiên Ngok Bay #47",
+    location: { province: "Kon Tum", district: "TP Kon Tum", commune: "Đắk Blà", village: "Làng văn hóa Kon Klor", full: "Làng văn hóa Kon Klor, Đắk Blà, TP Kon Tum, Kon Tum" },
+    mapUrl: "https://maps.google.com/maps?q=14.3544,108.0005&z=15&output=embed",
+    startDate: "2025-08-15", endDate: "2025-08-15", time: "06:00 - 12:00",
+    description: "Phiên chợ truyền thống tháng 8 với các sản phẩm thủ công mỹ nghệ, thổ cẩm Bana và đặc sản Tây Nguyên. Có trình diễn cồng chiêng và dệt thổ cẩm trực tiếp.",
+    categories: ["Thổ cẩm & Trang phục", "Nông sản", "Thủ công mỹ nghệ"],
+    images: ["photo-1506905925346-21bda4d32df4", "photo-1555041469-a586c61ea9bc"],
+    contact: { phone: "0260 3862 222", email: "chophien@ngokbay.vn", fanpage: "facebook.com/ngokbaymarket" },
+    registrationOpen: true, visible: true,
+    vendors: 45, expectedVisitors: 500, highlights: ["Thổ cẩm mới", "Sâm Ngọc Linh", "Cồng chiêng biểu diễn"]
+  },
+  {
+    id: 2,
+    name: "Chợ Phiên Ngok Bay #48",
+    location: { province: "Kon Tum", district: "TP Kon Tum", commune: "Thắng Lợi", village: "Quảng trường 16/3", full: "Quảng trường 16/3, Thắng Lợi, TP Kon Tum, Kon Tum" },
+    mapUrl: "https://maps.google.com/maps?q=14.3600,108.0100&z=15&output=embed",
+    startDate: "2025-09-20", endDate: "2025-09-20", time: "06:00 - 12:00",
+    description: "Phiên chợ mùa màng đặc biệt tháng 9, tôn vinh văn hóa lúa rẫy và nông nghiệp truyền thống của người Bana. Trưng bày ẩm thực đặc sản Tây Nguyên.",
+    categories: ["Nông sản", "Thực phẩm chế biến", "Dịch vụ/Du lịch"],
+    images: ["photo-1558618666-fcd25c85cd64", "photo-1506905925346-21bda4d32df4"],
+    contact: { phone: "0260 3862 222", email: "chophien@ngokbay.vn", fanpage: "facebook.com/ngokbaymarket" },
+    registrationOpen: true, visible: true,
+    vendors: 60, expectedVisitors: 800, highlights: ["Lễ hội mùa màng", "Ẩm thực đặc sản", "Giao lưu văn hóa"]
+  },
+  {
+    id: 3,
+    name: "Chợ Phiên Ngok Bay #49",
+    location: { province: "Kon Tum", district: "TP Kon Tum", commune: "Kon Tum", village: "Làng du lịch Kon Tum", full: "Khuôn viên Làng du lịch Kon Tum, TP Kon Tum" },
+    mapUrl: "https://maps.google.com/maps?q=14.3490,107.9900&z=15&output=embed",
+    startDate: "2025-10-18", endDate: "2025-10-19", time: "06:00 - 14:00",
+    description: "Phiên chợ ngày hội thổ cẩm lớn nhất năm, quy tụ nghệ nhân từ khắp các làng Bana. Có triển lãm, trình diễn đan tre và ẩm thực truyền thống phong phú.",
+    categories: ["Trang phục truyền thống", "Thủ công mỹ nghệ", "Nông sản", "Thực phẩm chế biến"],
+    images: ["photo-1606503153255-59d8b8b82176", "photo-1511379938547-c1f69419868d"],
+    contact: { phone: "0260 3862 333", email: "sukien@ngokbay.vn", fanpage: "facebook.com/ngokbaymarket" },
+    registrationOpen: false, visible: true,
+    vendors: 70, expectedVisitors: 1000, highlights: ["Ngày hội thổ cẩm", "Trình diễn đan tre", "Ẩm thực truyền thống"]
+  },
+]
+
+const INITIAL_REGISTRATIONS = [
+  { id: "DK001", marketId: 1, marketName: "Chợ Phiên Ngok Bay #47", boothName: "Gian hàng Thổ cẩm H'Linh", ownerName: "H'Linh Đinh Thị", phone: "0923456789", email: "hlinh@gmail.com", address: "Làng Plei Ơi, Đắk Blà, TP Kon Tum", products: "Vải thổ cẩm, túi xách, khăn quàng cổ", category: "Trang phục truyền thống", status: "approved" as const, submittedAt: "10/07/2025", note: "" },
+  { id: "DK002", marketId: 1, marketName: "Chợ Phiên Ngok Bay #47", boothName: "Cà phê Ngok Bay", ownerName: "Đinh Văn Hùng", phone: "0912345678", email: "dvhung@gmail.com", address: "Thôn 4, Đắk Blà, TP Kon Tum", products: "Cà phê Arabica rang xay, cà phê sữa đá", category: "Thực phẩm chế biến", status: "approved" as const, submittedAt: "11/07/2025", note: "" },
+  { id: "DK003", marketId: 1, marketName: "Chợ Phiên Ngok Bay #47", boothName: "Mật ong Tây Nguyên", ownerName: "A Phúc Đinh", phone: "0901234567", email: "aphuc@gmail.com", address: "Làng Kon Klor, Đắk Blà, TP Kon Tum", products: "Mật ong rừng nguyên chất, sáp ong", category: "Nông sản", status: "pending" as const, submittedAt: "13/07/2025", note: "" },
+  { id: "DK004", marketId: 1, marketName: "Chợ Phiên Ngok Bay #47", boothName: "Gùi đan tre Kon Lơng Khơng", ownerName: "Đinh Văn Blưm", phone: "0934500001", email: "blum@gmail.com", address: "Làng Kon Lơng Khơng, Đắk Blà", products: "Gùi tre, rổ, giỏ đan lát", category: "Thủ công mỹ nghệ", status: "pending" as const, submittedAt: "14/07/2025", note: "" },
+  { id: "DK005", marketId: 1, marketName: "Chợ Phiên Ngok Bay #47", boothName: "Sâm dây Tu Mơ Rông", ownerName: "Y Hoa Đinh", phone: "0945678902", email: "yhoa@gmail.com", address: "Xã Đắk Na, Tu Mơ Rông, Kon Tum", products: "Sâm dây tươi và khô, trà thảo mộc", category: "Nông sản", status: "rejected" as const, submittedAt: "12/07/2025", note: "Chưa có giấy phép kinh doanh dược liệu" },
+  { id: "DK006", marketId: 2, marketName: "Chợ Phiên Ngok Bay #48", boothName: "Làng nghề Plei Ơi", ownerName: "H'Nhung Nguyễn", phone: "0968901234", email: "hnhung@gmail.com", address: "Làng Plei Ơi, Đắk Blà, TP Kon Tum", products: "Thổ cẩm cao cấp, trang phục Bana", category: "Trang phục truyền thống", status: "pending" as const, submittedAt: "15/07/2025", note: "" },
+  { id: "DK007", marketId: 2, marketName: "Chợ Phiên Ngok Bay #48", boothName: "Đặc sản rừng Kon Tum", ownerName: "A Sơn Đinh", phone: "0979012345", email: "ason@gmail.com", address: "Xã Ngọc Tụ, Đắk Glei, Kon Tum", products: "Rau rừng, nấm khô, lá thuốc", category: "Nông sản", status: "approved" as const, submittedAt: "16/07/2025", note: "" },
 ]
 
 const ARTISANS = [
@@ -637,6 +724,7 @@ function HeroSection() {
 function HomePage({ onAddCart }: { onAddCart: (p: any) => void }) {
   const [isLoading, setIsLoading] = useState(true)
   const navigate = useNavigate()
+  const { markets } = useMarket()
 
   useEffect(() => { setTimeout(() => setIsLoading(false), 600) }, [])
   if (isLoading) return <div className="pt-16"><Loading /></div>
@@ -676,7 +764,7 @@ function HomePage({ onAddCart }: { onAddCart: (p: any) => void }) {
             </Link>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {MARKET_SCHEDULE.map(m => (
+            {markets.filter(m => m.visible).slice(0, 3).map(m => (
               <div key={m.id} className="bg-card rounded-2xl border border-border p-6 hover:shadow-lg transition-shadow">
                 <div className="flex items-start justify-between mb-4">
                   <div className="w-12 h-12 bg-accent/10 rounded-xl flex items-center justify-center">
@@ -687,10 +775,10 @@ function HomePage({ onAddCart }: { onAddCart: (p: any) => void }) {
                 <h3 className="font-display font-bold text-foreground mb-2">{m.name}</h3>
                 <div className="space-y-1.5 mb-4">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground font-body">
-                    <Calendar size={13} className="text-accent" /> {m.date} • {m.time}
+                    <Calendar size={13} className="text-accent" /> {m.startDate} • {m.time}
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground font-body">
-                    <MapPin size={13} className="text-accent" /> {m.location}
+                    <MapPin size={13} className="text-accent" /> {m.location.full}
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground font-body">
                     <Users size={13} className="text-accent" /> {m.vendors} gian hàng • ~{m.expectedVisitors} khách
@@ -699,8 +787,8 @@ function HomePage({ onAddCart }: { onAddCart: (p: any) => void }) {
                 <div className="flex flex-wrap gap-1.5 mb-4">
                   {m.highlights.map(h => <span key={h} className="text-xs bg-muted px-2 py-0.5 rounded-full text-muted-foreground font-body">{h}</span>)}
                 </div>
-                <button onClick={() => navigate("/lich-cho-phien")} className="w-full flex items-center justify-center gap-2 py-2.5 border border-primary text-primary rounded-xl text-sm font-semibold hover:bg-primary hover:text-primary-foreground transition-colors font-body">
-                  <Map size={14} /> Xem bản đồ
+                <button onClick={() => navigate(`/lich-cho-phien/${m.id}`)} className="w-full flex items-center justify-center gap-2 py-2.5 border border-primary text-primary rounded-xl text-sm font-semibold hover:bg-primary hover:text-primary-foreground transition-colors font-body">
+                  <ExternalLink size={14} /> Xem chi tiết
                 </button>
               </div>
             ))}
@@ -1270,15 +1358,9 @@ function VanHoaPage() {
 // LICH CHO PHIEN PAGE
 // ============================================================
 function LichChoPhienPage() {
-  const [regForm, setRegForm] = useState({ name: "", email: "", phone: "" })
-  const [submitted, setSubmitted] = useState(false)
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setSubmitted(true)
-    setTimeout(() => setSubmitted(false), 4000)
-    setRegForm({ name: "", email: "", phone: "" })
-  }
+  const { markets, registrations } = useMarket()
+  const navigate = useNavigate()
+  const visibleMarkets = markets.filter(m => m.visible)
 
   return (
     <main className="min-h-screen bg-background pt-20">
@@ -1298,78 +1380,52 @@ function LichChoPhienPage() {
         <div className="mb-16">
           <SectionHeader badge="Lịch trình" title="Các phiên chợ sắp diễn ra" />
           <div className="space-y-6">
-            {MARKET_SCHEDULE.map((m, i) => (
-              <div key={m.id} className="bg-card rounded-2xl border border-border p-6 hover:shadow-lg transition-shadow">
-                <div className="flex flex-col md:flex-row md:items-center gap-6">
-                  <div className="w-20 h-20 bg-accent/10 rounded-2xl flex flex-col items-center justify-center flex-shrink-0">
-                    <span className="font-display text-2xl font-bold text-accent">{m.date.split("/")[0]}</span>
-                    <span className="text-xs text-muted-foreground font-body">Tháng {m.date.split("/")[1]}</span>
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex flex-wrap items-center gap-2 mb-2">
-                      <h3 className="font-display font-bold text-xl text-foreground">{m.name}</h3>
-                      <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-body font-semibold">Sắp diễn ra</span>
+            {visibleMarkets.map((m) => {
+              const approvedBooths = registrations.filter(r => r.marketId === m.id && r.status === "approved").length
+              const day = m.startDate ? new Date(m.startDate).getDate() : ""
+              const month = m.startDate ? new Date(m.startDate).getMonth() + 1 : ""
+              return (
+                <div key={m.id} className="bg-card rounded-2xl border border-border p-6 hover:shadow-lg transition-shadow">
+                  <div className="flex flex-col md:flex-row md:items-center gap-6">
+                    <div className="w-20 h-20 bg-accent/10 rounded-2xl flex flex-col items-center justify-center flex-shrink-0">
+                      <span className="font-display text-2xl font-bold text-accent">{day}</span>
+                      <span className="text-xs text-muted-foreground font-body">Tháng {month}</span>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground font-body">
-                        <Clock size={13} className="text-accent" /> {m.time}
+                    <div className="flex-1">
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <h3 className="font-display font-bold text-xl text-foreground">{m.name}</h3>
+                        <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-body font-semibold">Sắp diễn ra</span>
+                        {m.registrationOpen && <span className="text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded-full font-body font-semibold">Đang nhận ĐK</span>}
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground font-body">
-                        <MapPin size={13} className="text-accent" /> {m.location}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground font-body">
+                          <Clock size={13} className="text-accent" /> {m.time}
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground font-body">
+                          <MapPin size={13} className="text-accent" /> <span className="truncate">{m.location.full}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground font-body">
+                          <Store size={13} className="text-accent" /> {approvedBooths} gian hàng
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground font-body">
-                        <Users size={13} className="text-accent" /> {m.vendors} gian hàng
+                      <div className="flex flex-wrap gap-2">
+                        {m.highlights.map(h => <span key={h} className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full font-body">{h}</span>)}
                       </div>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      {m.highlights.map(h => <span key={h} className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full font-body">{h}</span>)}
+                    <div className="flex flex-col gap-2">
+                      <button onClick={() => navigate(`/lich-cho-phien/${m.id}`)} className="px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-semibold font-body hover:bg-primary/80 transition-colors flex items-center gap-2">
+                        <ExternalLink size={14} /> Xem chi tiết
+                      </button>
+                      {m.registrationOpen && (
+                        <button onClick={() => navigate(`/lich-cho-phien/${m.id}`)} className="px-5 py-2.5 border border-primary text-primary rounded-xl text-sm font-semibold font-body hover:bg-primary/10 transition-colors flex items-center gap-2">
+                          <ClipboardList size={14} /> Đăng ký gian hàng
+                        </button>
+                      )}
                     </div>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <button className="px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-semibold font-body hover:bg-primary/80 transition-colors flex items-center gap-2">
-                      <Map size={14} /> Xem bản đồ
-                    </button>
-                    <button className="px-5 py-2.5 border border-border text-foreground rounded-xl text-sm font-semibold font-body hover:bg-muted transition-colors flex items-center gap-2">
-                      <ExternalLink size={14} /> Chi tiết
-                    </button>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Vendors */}
-        <div className="mb-16">
-          <SectionHeader badge="Gian hàng" title="Danh sách gian hàng" subtitle="Các thương nhân và nghệ nhân tham gia chợ phiên" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {VENDORS.map(v => (
-              <div key={v.id} className="bg-card rounded-2xl border border-border p-5 hover:shadow-md transition-shadow">
-                <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center mb-3">
-                  <Layers size={18} className="text-primary" />
-                </div>
-                <h3 className="font-semibold text-foreground font-body mb-1">{v.name}</h3>
-                <p className="text-xs text-accent font-semibold font-body mb-2">Sạp {v.booth}</p>
-                <div className="flex flex-wrap gap-1 mb-3">
-                  {v.products.map(p => <span key={p} className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full font-body">{p}</span>)}
-                </div>
-                <p className="text-xs text-muted-foreground font-body">{v.contact}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Map Placeholder */}
-        <div className="mb-16">
-          <SectionHeader badge="Vị trí" title="Bản đồ chợ phiên" />
-          <div className="bg-muted rounded-3xl overflow-hidden h-80 relative flex items-center justify-center border border-border">
-            <div className="text-center">
-              <Map size={48} className="text-muted-foreground mx-auto mb-3" />
-              <p className="text-muted-foreground font-body mb-4">Bản đồ Google Maps</p>
-              <button className="px-6 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-semibold font-body hover:bg-primary/80 transition-colors">
-                Mở Google Maps
-              </button>
-            </div>
+              )
+            })}
           </div>
         </div>
 
@@ -1396,29 +1452,243 @@ function LichChoPhienPage() {
           </div>
         </div>
 
-        {/* Registration */}
-        <div className="bg-primary rounded-3xl p-8 md:p-12">
-          <div className="max-w-lg mx-auto text-center">
-            <Bell size={32} className="text-primary-foreground mx-auto mb-4" />
-            <h2 className="font-display text-3xl font-bold text-primary-foreground mb-3">Nhận thông báo chợ phiên</h2>
-            <p className="text-primary-foreground/70 font-body mb-8">Đăng ký để nhận thông báo sớm nhất về lịch tổ chức, gian hàng mới và ưu đãi đặc biệt</p>
-            {submitted ? (
-              <div className="flex items-center justify-center gap-2 bg-primary-foreground/20 text-primary-foreground py-4 rounded-2xl font-semibold font-body">
-                <CheckCircle size={18} /> Đăng ký thành công!
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-3">
-                <input required value={regForm.name} onChange={e => setRegForm({ ...regForm, name: e.target.value })} placeholder="Họ và tên" className="w-full px-4 py-3 rounded-xl bg-primary-foreground/10 border border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/50 font-body outline-none focus:border-primary-foreground" />
-                <input required type="email" value={regForm.email} onChange={e => setRegForm({ ...regForm, email: e.target.value })} placeholder="Email" className="w-full px-4 py-3 rounded-xl bg-primary-foreground/10 border border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/50 font-body outline-none focus:border-primary-foreground" />
-                <input value={regForm.phone} onChange={e => setRegForm({ ...regForm, phone: e.target.value })} placeholder="Số điện thoại (tuỳ chọn)" className="w-full px-4 py-3 rounded-xl bg-primary-foreground/10 border border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/50 font-body outline-none focus:border-primary-foreground" />
-                <button type="submit" className="w-full py-3.5 bg-accent text-accent-foreground rounded-xl font-semibold font-body hover:bg-accent/80 transition-colors">
-                  Đăng ký nhận thông báo
-                </button>
-              </form>
-            )}
+        {/* CTA */}
+        <div className="bg-primary rounded-3xl p-8 md:p-12 text-center">
+          <Bell size={32} className="text-primary-foreground mx-auto mb-4" />
+          <h2 className="font-display text-3xl font-bold text-primary-foreground mb-3">Muốn tham gia chợ phiên?</h2>
+          <p className="text-primary-foreground/70 font-body mb-6">Chọn phiên chợ và đăng ký gian hàng trực tuyến ngay hôm nay</p>
+          <div className="flex flex-wrap justify-center gap-4">
+            {visibleMarkets.filter(m => m.registrationOpen).slice(0, 2).map(m => (
+              <button key={m.id} onClick={() => navigate(`/lich-cho-phien/${m.id}`)}
+                className="px-6 py-3 bg-accent text-accent-foreground rounded-xl font-semibold font-body hover:bg-accent/80 transition-colors flex items-center gap-2">
+                <ClipboardList size={15} /> Đăng ký — {m.name}
+              </button>
+            ))}
           </div>
         </div>
       </div>
+    </main>
+  )
+}
+
+// ============================================================
+// MARKET DETAIL PAGE
+// ============================================================
+function MarketDetailPage() {
+  const { id } = useParams()
+  const { markets, registrations, setRegistrations } = useMarket()
+  const navigate = useNavigate()
+  const [showRegModal, setShowRegModal] = useState(false)
+  const [regForm, setRegForm] = useState({ boothName: "", ownerName: "", phone: "", email: "", address: "", products: "", category: PRODUCT_CATEGORIES_LIST[0] })
+  const [regSubmitting, setRegSubmitting] = useState(false)
+
+  const market = markets.find(m => m.id === Number(id))
+  if (!market) return (
+    <main className="min-h-screen bg-background pt-24 flex items-center justify-center">
+      <EmptyState title="Không tìm thấy phiên chợ" subtitle="Phiên chợ này không tồn tại hoặc đã bị xóa" />
+    </main>
+  )
+
+  const approvedBooths = registrations.filter(r => r.marketId === market.id && r.status === "approved")
+
+  const submitRegistration = (e: React.FormEvent) => {
+    e.preventDefault()
+    setRegSubmitting(true)
+    setTimeout(() => {
+      const newReg: BoothRegistration = {
+        id: `DK${Date.now()}`,
+        marketId: market.id,
+        marketName: market.name,
+        ...regForm,
+        status: "pending",
+        submittedAt: new Date().toLocaleDateString("vi-VN"),
+        note: ""
+      }
+      setRegistrations(rs => [...rs, newReg])
+      toast.success("Đăng ký gian hàng thành công! Chúng tôi sẽ xem xét và phản hồi sớm nhất.")
+      setRegSubmitting(false)
+      setShowRegModal(false)
+      setRegForm({ boothName: "", ownerName: "", phone: "", email: "", address: "", products: "", category: PRODUCT_CATEGORIES_LIST[0] })
+    }, 1000)
+  }
+
+  const day = market.startDate ? new Date(market.startDate).getDate() : ""
+  const monthYear = market.startDate ? new Date(market.startDate).toLocaleDateString("vi-VN", { month: "long", year: "numeric" }) : ""
+
+  return (
+    <main className="min-h-screen bg-background pt-20">
+      {/* Hero */}
+      <div className="relative h-72 overflow-hidden">
+        <img src={img(market.images[0], 1600, 500)} alt={market.name} className="w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-foreground/65 flex items-end">
+          <div className="max-w-7xl mx-auto px-6 lg:px-8 pb-8 w-full">
+            <button onClick={() => navigate("/lich-cho-phien")} className="text-white/60 hover:text-white text-sm font-body flex items-center gap-1 mb-3 transition-colors">
+              <ChevronLeft size={14} /> Lịch chợ phiên
+            </button>
+            <div className="flex flex-wrap items-center gap-3 mb-2">
+              <span className="text-xs bg-accent text-accent-foreground px-2.5 py-1 rounded-full font-body font-semibold">Sắp diễn ra</span>
+              {market.registrationOpen && <span className="text-xs bg-green-500 text-white px-2.5 py-1 rounded-full font-body font-semibold">Đang nhận đăng ký</span>}
+            </div>
+            <h1 className="font-display text-4xl font-bold text-white">{market.name}</h1>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main content */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Info card */}
+            <div className="bg-card rounded-2xl border border-border p-6">
+              <h2 className="font-display text-xl font-bold text-foreground mb-4">Thông tin phiên chợ</h2>
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 bg-accent/10 rounded-xl flex items-center justify-center flex-shrink-0"><Calendar size={16} className="text-accent" /></div>
+                  <div><p className="text-xs text-muted-foreground font-body">Ngày tổ chức</p><p className="text-sm font-semibold text-foreground font-body">{day} {monthYear}</p></div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 bg-accent/10 rounded-xl flex items-center justify-center flex-shrink-0"><Clock size={16} className="text-accent" /></div>
+                  <div><p className="text-xs text-muted-foreground font-body">Giờ họp chợ</p><p className="text-sm font-semibold text-foreground font-body">{market.time}</p></div>
+                </div>
+                <div className="flex items-start gap-3 col-span-2">
+                  <div className="w-9 h-9 bg-accent/10 rounded-xl flex items-center justify-center flex-shrink-0"><MapPin size={16} className="text-accent" /></div>
+                  <div><p className="text-xs text-muted-foreground font-body">Địa điểm</p><p className="text-sm font-semibold text-foreground font-body">{market.location.full}</p></div>
+                </div>
+              </div>
+              <p className="text-muted-foreground font-body text-sm leading-relaxed">{market.description}</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {market.categories.map(c => <span key={c} className="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full font-body font-semibold">{c}</span>)}
+              </div>
+            </div>
+
+            {/* Approved booths */}
+            <div className="bg-card rounded-2xl border border-border p-6">
+              <h2 className="font-display text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+                <Store size={18} className="text-primary" /> Gian hàng tham gia ({approvedBooths.length})
+              </h2>
+              {approvedBooths.length === 0 ? (
+                <EmptyState title="Chưa có gian hàng được duyệt" subtitle="Gian hàng sẽ xuất hiện sau khi admin duyệt đăng ký" />
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {approvedBooths.map(b => (
+                    <div key={b.id} className="flex items-start gap-3 p-3 rounded-xl bg-muted/50 border border-border">
+                      <div className="w-9 h-9 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <BadgeCheck size={16} className="text-primary" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-foreground font-body truncate">{b.boothName}</p>
+                        <p className="text-xs text-muted-foreground font-body">{b.category}</p>
+                        <p className="text-xs text-muted-foreground font-body truncate">{b.products}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Map */}
+            <div className="bg-card rounded-2xl border border-border p-6">
+              <h2 className="font-display text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+                <Map size={18} className="text-primary" /> Bản đồ
+              </h2>
+              <div className="bg-muted rounded-xl h-64 flex items-center justify-center border border-border relative overflow-hidden">
+                <div className="text-center z-10">
+                  <Map size={40} className="text-muted-foreground mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground font-body mb-3">{market.location.full}</p>
+                  <a href={`https://maps.google.com/maps?q=${encodeURIComponent(market.location.full)}`} target="_blank" rel="noopener noreferrer"
+                    className="px-5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-semibold font-body hover:bg-primary/80 transition-colors inline-flex items-center gap-2">
+                    <ExternalLink size={13} /> Mở Google Maps
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Registration CTA */}
+            <div className="bg-primary rounded-2xl p-6 text-center">
+              <ClipboardList size={28} className="text-primary-foreground mx-auto mb-3" />
+              <h3 className="font-display text-xl font-bold text-primary-foreground mb-2">Đăng ký gian hàng</h3>
+              {market.registrationOpen ? (
+                <>
+                  <p className="text-primary-foreground/70 font-body text-sm mb-4">Đang nhận đăng ký! Nhanh tay đặt gian hàng tại phiên chợ này.</p>
+                  <button onClick={() => setShowRegModal(true)} className="w-full py-3 bg-accent text-accent-foreground rounded-xl font-semibold font-body hover:bg-accent/80 transition-colors">
+                    Đăng ký ngay
+                  </button>
+                </>
+              ) : (
+                <p className="text-primary-foreground/70 font-body text-sm mt-2">Đăng ký gian hàng đã đóng.</p>
+              )}
+            </div>
+
+            {/* Contact */}
+            <div className="bg-card rounded-2xl border border-border p-5">
+              <h3 className="font-semibold text-foreground font-body mb-3">Liên hệ</h3>
+              <div className="space-y-3">
+                {market.contact.phone && <div className="flex items-center gap-3"><Phone size={15} className="text-accent flex-shrink-0" /><span className="text-sm text-foreground font-body">{market.contact.phone}</span></div>}
+                {market.contact.email && <div className="flex items-center gap-3"><Mail size={15} className="text-accent flex-shrink-0" /><span className="text-sm text-foreground font-body">{market.contact.email}</span></div>}
+                {market.contact.fanpage && <div className="flex items-center gap-3"><Facebook size={15} className="text-accent flex-shrink-0" /><span className="text-sm text-foreground font-body">{market.contact.fanpage}</span></div>}
+              </div>
+            </div>
+
+            {/* Stats */}
+            <div className="bg-card rounded-2xl border border-border p-5">
+              <h3 className="font-semibold text-foreground font-body mb-3">Thống kê</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between"><span className="text-sm text-muted-foreground font-body">Gian hàng đã duyệt</span><span className="font-bold text-foreground font-body">{approvedBooths.length}</span></div>
+                <div className="flex justify-between"><span className="text-sm text-muted-foreground font-body">Khách dự kiến</span><span className="font-bold text-foreground font-body">{market.expectedVisitors.toLocaleString()}</span></div>
+                <div className="flex justify-between"><span className="text-sm text-muted-foreground font-body">Danh mục</span><span className="font-bold text-foreground font-body">{market.categories.length}</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Booth Registration Modal */}
+      {showRegModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowRegModal(false)}>
+          <div className="bg-card rounded-3xl border border-border w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="sticky top-0 bg-card border-b border-border px-8 py-5 flex items-center justify-between rounded-t-3xl">
+              <div>
+                <h3 className="font-display text-xl font-bold text-foreground">Đăng ký gian hàng</h3>
+                <p className="text-xs text-muted-foreground font-body">{market.name}</p>
+              </div>
+              <button onClick={() => setShowRegModal(false)} className="p-2 rounded-lg hover:bg-muted"><X size={18} /></button>
+            </div>
+            <form onSubmit={submitRegistration} className="p-8 space-y-4">
+              {[
+                { key: "boothName", label: "Tên gian hàng *", placeholder: "VD: Gùi đan tre Kon Klor", required: true },
+                { key: "ownerName", label: "Họ và tên chủ gian hàng *", placeholder: "Nguyễn Văn A", required: true },
+                { key: "phone", label: "Số điện thoại *", placeholder: "0901 234 567", required: true },
+                { key: "email", label: "Email", placeholder: "email@example.com", required: false },
+                { key: "address", label: "Địa chỉ *", placeholder: "Làng / Xã / Huyện / Tỉnh", required: true },
+              ].map(f => (
+                <div key={f.key}>
+                  <label className="block text-sm font-semibold text-foreground font-body mb-1.5">{f.label}</label>
+                  <input required={f.required} value={(regForm as any)[f.key]} onChange={e => setRegForm(rf => ({ ...rf, [f.key]: e.target.value }))} placeholder={f.placeholder} className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm font-body outline-none focus:border-primary" />
+                </div>
+              ))}
+              <div>
+                <label className="block text-sm font-semibold text-foreground font-body mb-1.5">Sản phẩm dự kiến bán *</label>
+                <textarea required rows={2} value={regForm.products} onChange={e => setRegForm(rf => ({ ...rf, products: e.target.value }))} placeholder="Liệt kê các sản phẩm bạn sẽ mang đến..." className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm font-body outline-none focus:border-primary resize-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-foreground font-body mb-1.5">Danh mục *</label>
+                <select value={regForm.category} onChange={e => setRegForm(rf => ({ ...rf, category: e.target.value }))} className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm font-body outline-none focus:border-primary">
+                  {PRODUCT_CATEGORIES_LIST.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => setShowRegModal(false)} className="flex-1 py-3 border border-border rounded-2xl text-sm font-semibold font-body hover:bg-muted transition-colors">Hủy</button>
+                <button type="submit" disabled={regSubmitting} className="flex-1 py-3 bg-primary text-primary-foreground rounded-2xl text-sm font-semibold font-body hover:bg-primary/80 transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
+                  {regSubmitting ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Đang gửi...</> : "Gửi đăng ký"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
@@ -1799,6 +2069,7 @@ function LienHePage() {
 function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [webMgmtOpen, setWebMgmtOpen] = useState(false)
+  const [eventMgmtOpen, setEventMgmtOpen] = useState(false)
   const [topbarDropOpen, setTopbarDropOpen] = useState(false)
   const topbarDropRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
@@ -1815,10 +2086,14 @@ function AdminLayout() {
   const navItems = [
     { to: "/admin",            icon: BarChart2,  label: "Tổng quan",     end: true },
     { to: "/admin/san-pham",   icon: Package,    label: "Sản phẩm",      end: false },
-    { to: "/admin/cho-phien",  icon: Calendar,   label: "Chợ phiên",     end: false },
     { to: "/admin/blog",       icon: FileText,   label: "Bài viết",      end: false },
     { to: "/admin/don-hang",   icon: ShoppingBag,label: "Đơn hàng",      end: false },
     { to: "/admin/nguoi-dung", icon: Users,      label: "Người dùng",    end: false },
+  ]
+
+  const eventSubItems = [
+    { to: "/admin/cho-phien", icon: Calendar,       label: "Quản lý chợ phiên" },
+    { to: "/admin/dang-ky",   icon: ClipboardList,  label: "Quản lý đăng ký" },
   ]
 
   const webSubItems = [
@@ -1851,6 +2126,44 @@ function AdminLayout() {
               {sidebarOpen && <span className="text-sm font-medium font-body">{item.label}</span>}
             </NavLink>
           ))}
+
+          {/* Quản lý sự kiện — collapsible group */}
+          <div>
+            <button
+              onClick={() => setEventMgmtOpen(v => !v)}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground ${eventMgmtOpen ? "bg-sidebar-accent text-sidebar-foreground" : ""}`}
+              title={!sidebarOpen ? "Quản lý sự kiện" : undefined}
+            >
+              <Store size={18} className="flex-shrink-0" />
+              {sidebarOpen && (
+                <>
+                  <span className="text-sm font-medium font-body flex-1 text-left">Quản lý sự kiện</span>
+                  <ChevronDown size={14} className={`transition-transform duration-200 ${eventMgmtOpen ? "rotate-180" : ""}`} />
+                </>
+              )}
+            </button>
+            {eventMgmtOpen && sidebarOpen && (
+              <div className="ml-3 mt-1 space-y-0.5 border-l-2 border-sidebar-border pl-3">
+                {eventSubItems.map(sub => (
+                  <NavLink key={sub.to} to={sub.to}
+                    className={({ isActive }) => `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-body transition-colors ${isActive ? "bg-sidebar-primary text-sidebar-primary-foreground font-semibold" : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"}`}>
+                    <sub.icon size={14} className="flex-shrink-0" />
+                    {sub.label}
+                  </NavLink>
+                ))}
+              </div>
+            )}
+            {eventMgmtOpen && !sidebarOpen && (
+              <div className="mt-1 space-y-0.5">
+                {eventSubItems.map(sub => (
+                  <NavLink key={sub.to} to={sub.to} title={sub.label}
+                    className={({ isActive }) => `flex items-center justify-center p-2.5 rounded-xl transition-colors ${isActive ? "bg-sidebar-primary text-sidebar-primary-foreground" : "text-sidebar-foreground/60 hover:bg-sidebar-accent"}`}>
+                    <sub.icon size={15} />
+                  </NavLink>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Divider */}
           <div className="my-2 border-t border-sidebar-border" />
@@ -2440,11 +2753,80 @@ function AdminBlogPage() {
 }
 
 // ============================================================
-// ADMIN MARKET PAGE
+// ADMIN MARKET PAGE (full-featured manager)
 // ============================================================
 function AdminMarketPage() {
-  const [markets, setMarkets] = useState(MARKET_SCHEDULE)
+  const { markets, setMarkets } = useMarket()
   const [showModal, setShowModal] = useState(false)
+  const [editItem, setEditItem] = useState<Market | null>(null)
+  const [form, setForm] = useState<Partial<Market & { province: string; district: string; commune: string; village: string }>>({})
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
+
+  const openNew = () => {
+    setEditItem(null)
+    setForm({})
+    setSelectedCategories([])
+    setShowModal(true)
+  }
+
+  const openEdit = (m: Market) => {
+    setEditItem(m)
+    setForm({ ...m, province: m.location.province, district: m.location.district, commune: m.location.commune, village: m.location.village })
+    setSelectedCategories(m.categories)
+    setShowModal(true)
+  }
+
+  const handleSave = () => {
+    const locationFull = [form.village, form.commune, form.district, form.province].filter(Boolean).join(", ")
+    if (editItem) {
+      setMarkets(ms => ms.map(m => m.id === editItem.id ? {
+        ...m, name: form.name || m.name,
+        location: { province: form.province || "", district: form.district || "", commune: form.commune || "", village: form.village || "", full: locationFull },
+        mapUrl: form.mapUrl || m.mapUrl,
+        startDate: form.startDate || m.startDate,
+        endDate: form.endDate || m.endDate,
+        time: form.time || m.time,
+        description: form.description || m.description,
+        categories: selectedCategories,
+        contact: { phone: (form as any).contactPhone || m.contact.phone, email: (form as any).contactEmail || m.contact.email, fanpage: (form as any).contactFanpage || m.contact.fanpage },
+        registrationOpen: form.registrationOpen !== undefined ? form.registrationOpen : m.registrationOpen,
+        visible: form.visible !== undefined ? form.visible : m.visible,
+      } : m))
+      toast.success("Đã cập nhật phiên chợ")
+    } else {
+      const newMarket: Market = {
+        id: Date.now(), name: form.name || "Chợ phiên mới",
+        location: { province: form.province || "", district: form.district || "", commune: form.commune || "", village: form.village || "", full: locationFull },
+        mapUrl: form.mapUrl || "", startDate: form.startDate || "", endDate: form.endDate || "",
+        time: form.time || "06:00 - 12:00", description: form.description || "",
+        categories: selectedCategories, images: ["photo-1506905925346-21bda4d32df4"],
+        contact: { phone: (form as any).contactPhone || "", email: (form as any).contactEmail || "", fanpage: (form as any).contactFanpage || "" },
+        registrationOpen: form.registrationOpen ?? true, visible: form.visible ?? true,
+        vendors: 0, expectedVisitors: 0, highlights: []
+      }
+      setMarkets(ms => [...ms, newMarket])
+      toast.success("Đã thêm phiên chợ mới")
+    }
+    setShowModal(false)
+  }
+
+  const toggleRegistration = (id: number) => {
+    setMarkets(ms => ms.map(m => m.id === id ? { ...m, registrationOpen: !m.registrationOpen } : m))
+  }
+  const toggleVisible = (id: number) => {
+    setMarkets(ms => ms.map(m => m.id === id ? { ...m, visible: !m.visible } : m))
+  }
+  const handleDelete = (id: number) => {
+    if (!window.confirm("Xóa phiên chợ này?")) return
+    setMarkets(ms => ms.filter(m => m.id !== id))
+    toast.success("Đã xóa phiên chợ")
+  }
+
+  const toggleCategory = (cat: string) => {
+    setSelectedCategories(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat])
+  }
+
+  const fi = (key: string, val: any) => setForm(f => ({ ...f, [key]: val }))
 
   return (
     <div>
@@ -2453,65 +2835,387 @@ function AdminMarketPage() {
           <h1 className="font-display text-3xl font-bold text-foreground">Quản lý chợ phiên</h1>
           <p className="text-muted-foreground font-body text-sm">{markets.length} phiên chợ</p>
         </div>
-        <button onClick={() => setShowModal(true)} className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-xl font-semibold font-body hover:bg-primary/80 transition-colors text-sm">
+        <button onClick={openNew} className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-xl font-semibold font-body hover:bg-primary/80 transition-colors text-sm">
           <Plus size={16} /> Thêm phiên chợ
         </button>
       </div>
 
-      <div className="space-y-4 mb-8">
+      <div className="space-y-4">
         {markets.map(m => (
-          <div key={m.id} className="bg-card rounded-2xl border border-border p-6 hover:shadow-md transition-shadow">
-            <div className="flex flex-col md:flex-row md:items-center gap-4">
-              <div className="flex-1">
-                <h3 className="font-display font-bold text-xl text-foreground mb-2">{m.name}</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm text-muted-foreground font-body">
-                  <div className="flex items-center gap-2"><Calendar size={13} className="text-accent" /> {m.date}</div>
-                  <div className="flex items-center gap-2"><Clock size={13} className="text-accent" /> {m.time}</div>
-                  <div className="flex items-center gap-2"><MapPin size={13} className="text-accent" /> {m.location}</div>
+          <div key={m.id} className={`bg-card rounded-2xl border border-border p-6 hover:shadow-md transition-shadow ${!m.visible ? "opacity-60" : ""}`}>
+            <div className="flex flex-col lg:flex-row lg:items-start gap-4">
+              <div className="w-24 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-muted">
+                <img src={img(m.images[0], 200, 160)} alt="" className="w-full h-full object-cover" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <h3 className="font-display font-bold text-xl text-foreground">{m.name}</h3>
+                  {!m.visible && <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full font-body">Ẩn</span>}
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-body font-semibold ${m.registrationOpen ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"}`}>
+                    {m.registrationOpen ? "Đang nhận đăng ký" : "Đóng đăng ký"}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm text-muted-foreground font-body mb-3">
+                  <div className="flex items-center gap-1.5"><Calendar size={12} className="text-accent" /> {m.startDate}</div>
+                  <div className="flex items-center gap-1.5"><Clock size={12} className="text-accent" /> {m.time}</div>
+                  <div className="flex items-center gap-1.5 col-span-2"><MapPin size={12} className="text-accent" /> <span className="truncate">{m.location.full}</span></div>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {m.categories.map(c => <span key={c} className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-body">{c}</span>)}
                 </div>
               </div>
-              <div className="flex gap-2">
-                <button className="p-2 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors border border-border"><Edit size={16} /></button>
-                <button onClick={() => setMarkets(ms => ms.filter(x => x.id !== m.id))} className="p-2 rounded-xl hover:bg-red-50 hover:text-red-500 transition-colors border border-border"><Trash2 size={16} /></button>
+              <div className="flex flex-wrap gap-2 lg:flex-col lg:w-auto">
+                <button onClick={() => toggleRegistration(m.id)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold font-body border transition-colors ${m.registrationOpen ? "border-green-400 text-green-600 hover:bg-green-50" : "border-border text-muted-foreground hover:bg-muted"}`}>
+                  {m.registrationOpen ? <ToggleRight size={13} /> : <ToggleLeft size={13} />}
+                  {m.registrationOpen ? "Đóng ĐK" : "Mở ĐK"}
+                </button>
+                <button onClick={() => toggleVisible(m.id)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold font-body border transition-colors ${m.visible ? "border-border text-muted-foreground hover:bg-muted" : "border-primary text-primary hover:bg-primary/10"}`}>
+                  <Eye size={13} /> {m.visible ? "Ẩn" : "Hiện"}
+                </button>
+                <button onClick={() => openEdit(m)} className="p-1.5 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors border border-border"><Edit size={14} /></button>
+                <button onClick={() => handleDelete(m.id)} className="p-1.5 rounded-lg hover:bg-red-50 hover:text-red-500 transition-colors border border-border"><Trash2 size={14} /></button>
               </div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Map Preview */}
-      <div className="bg-card rounded-2xl border border-border p-6">
-        <h3 className="font-semibold text-foreground font-body mb-4 flex items-center gap-2"><Map size={16} /> Bản đồ phiên chợ</h3>
-        <div className="bg-muted rounded-xl h-60 flex items-center justify-center border border-border">
-          <div className="text-center">
-            <Map size={36} className="text-muted-foreground mx-auto mb-2" />
-            <p className="text-muted-foreground font-body text-sm">Google Maps Preview</p>
-            <p className="text-xs text-muted-foreground font-body mt-1">Tích hợp Google Maps API</p>
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
+          <div className="bg-card rounded-3xl border border-border w-full max-w-2xl shadow-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="sticky top-0 bg-card border-b border-border px-8 py-5 flex items-center justify-between rounded-t-3xl z-10">
+              <h3 className="font-display text-2xl font-bold text-foreground">{editItem ? "Chỉnh sửa phiên chợ" : "Thêm phiên chợ mới"}</h3>
+              <button onClick={() => setShowModal(false)} className="p-2 rounded-lg hover:bg-muted"><X size={18} /></button>
+            </div>
+            <div className="p-8 space-y-5">
+              <div>
+                <label className="block text-sm font-semibold text-foreground font-body mb-1.5">Tên phiên chợ *</label>
+                <input value={form.name || ""} onChange={e => fi("name", e.target.value)} placeholder="VD: Chợ Phiên Ngok Bay #50" className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm font-body outline-none focus:border-primary" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-foreground font-body mb-1.5">Ngày bắt đầu</label>
+                  <input type="date" value={form.startDate || ""} onChange={e => fi("startDate", e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm font-body outline-none focus:border-primary" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-foreground font-body mb-1.5">Ngày kết thúc</label>
+                  <input type="date" value={form.endDate || ""} onChange={e => fi("endDate", e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm font-body outline-none focus:border-primary" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-foreground font-body mb-1.5">Giờ họp chợ</label>
+                <input value={form.time || ""} onChange={e => fi("time", e.target.value)} placeholder="VD: 06:00 - 12:00" className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm font-body outline-none focus:border-primary" />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-foreground font-body mb-2">Địa điểm</label>
+                <div className="grid grid-cols-2 gap-3">
+                  {[["province", "Tỉnh/Thành phố", "Kon Tum"], ["district", "Quận/Huyện", "TP Kon Tum"], ["commune", "Xã/Phường", "Đắk Blà"], ["village", "Thôn/Làng", "Làng Kon Klor"]].map(([key, label, ph]) => (
+                    <div key={key}>
+                      <label className="text-xs text-muted-foreground font-body mb-1 block">{label}</label>
+                      <input value={(form as any)[key] || ""} onChange={e => fi(key, e.target.value)} placeholder={ph} className="w-full px-3 py-2 rounded-xl border border-border bg-background text-foreground text-sm font-body outline-none focus:border-primary" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-foreground font-body mb-1.5">Link bản đồ Google Maps (embed)</label>
+                <input value={form.mapUrl || ""} onChange={e => fi("mapUrl", e.target.value)} placeholder="https://maps.google.com/maps?q=..." className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm font-body outline-none focus:border-primary" />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-foreground font-body mb-1.5">Mô tả chi tiết</label>
+                <textarea rows={3} value={form.description || ""} onChange={e => fi("description", e.target.value)} placeholder="Mô tả về phiên chợ..." className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm font-body outline-none focus:border-primary resize-none" />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-foreground font-body mb-2">Danh mục sản phẩm</label>
+                <div className="flex flex-wrap gap-2">
+                  {PRODUCT_CATEGORIES_LIST.map(cat => (
+                    <button key={cat} type="button" onClick={() => toggleCategory(cat)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold font-body border transition-colors ${selectedCategories.includes(cat) ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary hover:text-primary"}`}>
+                      {selectedCategories.includes(cat) && <Check size={10} className="inline mr-1" />}{cat}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-foreground font-body mb-2">Thông tin liên hệ</label>
+                <div className="grid grid-cols-1 gap-3">
+                  {[["contactPhone", "Điện thoại", "0260 3862 222"], ["contactEmail", "Email", "chophien@ngokbay.vn"], ["contactFanpage", "Fanpage Facebook", "facebook.com/ngokbaymarket"]].map(([key, label, ph]) => (
+                    <div key={key} className="flex items-center gap-3">
+                      <label className="text-xs text-muted-foreground font-body w-20 flex-shrink-0">{label}</label>
+                      <input value={(form as any)[key] || ""} onChange={e => fi(key, e.target.value)} placeholder={ph} className="flex-1 px-3 py-2 rounded-xl border border-border bg-background text-foreground text-sm font-body outline-none focus:border-primary" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex gap-6">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <div onClick={() => fi("registrationOpen", !(form.registrationOpen ?? true))} className={`w-11 h-6 rounded-full transition-colors relative ${(form.registrationOpen ?? true) ? "bg-primary" : "bg-muted"}`}>
+                    <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${(form.registrationOpen ?? true) ? "translate-x-6" : "translate-x-1"}`} />
+                  </div>
+                  <span className="text-sm font-body text-foreground">Mở nhận đăng ký</span>
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <div onClick={() => fi("visible", !(form.visible ?? true))} className={`w-11 h-6 rounded-full transition-colors relative ${(form.visible ?? true) ? "bg-primary" : "bg-muted"}`}>
+                    <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${(form.visible ?? true) ? "translate-x-6" : "translate-x-1"}`} />
+                  </div>
+                  <span className="text-sm font-body text-foreground">Hiển thị công khai</span>
+                </label>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button onClick={() => setShowModal(false)} className="flex-1 py-3 border border-border rounded-2xl text-sm font-semibold font-body hover:bg-muted transition-colors">Hủy</button>
+                <button onClick={handleSave} className="flex-1 py-3 bg-primary text-primary-foreground rounded-2xl text-sm font-semibold font-body hover:bg-primary/80 transition-colors">
+                  {editItem ? "Cập nhật" : "Thêm mới"}
+                </button>
+              </div>
+            </div>
           </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ============================================================
+// ADMIN REGISTRATION PAGE
+// ============================================================
+function AdminRegistrationPage() {
+  const { markets, registrations, setRegistrations } = useMarket()
+  const [filterMarket, setFilterMarket] = useState("all")
+  const [filterStatus, setFilterStatus] = useState("all")
+  const [search, setSearch] = useState("")
+  const [detailReg, setDetailReg] = useState<BoothRegistration | null>(null)
+  const [editReg, setEditReg] = useState<BoothRegistration | null>(null)
+  const [editForm, setEditForm] = useState<Partial<BoothRegistration>>({})
+
+  const filtered = registrations.filter(r =>
+    (filterMarket === "all" || r.marketId === Number(filterMarket)) &&
+    (filterStatus === "all" || r.status === filterStatus) &&
+    (r.ownerName.toLowerCase().includes(search.toLowerCase()) || r.boothName.toLowerCase().includes(search.toLowerCase()) || r.id.includes(search))
+  )
+
+  const approve = (id: string) => {
+    setRegistrations(rs => rs.map(r => r.id === id ? { ...r, status: "approved" } : r))
+    toast.success("Đã duyệt gian hàng! Gian hàng sẽ xuất hiện trên website.")
+    setDetailReg(prev => prev && prev.id === id ? { ...prev, status: "approved" } : prev)
+  }
+
+  const reject = (id: string) => {
+    setRegistrations(rs => rs.map(r => r.id === id ? { ...r, status: "rejected" } : r))
+    toast.error("Đã từ chối đăng ký. Thông báo đã được gửi tới người đăng ký.")
+    setDetailReg(prev => prev && prev.id === id ? { ...prev, status: "rejected" } : prev)
+  }
+
+  const openEdit = (r: BoothRegistration) => {
+    setEditReg(r)
+    setEditForm({ ...r })
+    setDetailReg(null)
+  }
+
+  const saveEdit = () => {
+    setRegistrations(rs => rs.map(r => r.id === editReg!.id ? { ...r, ...editForm } as BoothRegistration : r))
+    toast.success("Đã cập nhật thông tin đăng ký")
+    setEditReg(null)
+  }
+
+  const exportCSV = () => {
+    const header = ["Mã ĐK", "Chợ phiên", "Tên gian hàng", "Chủ gian hàng", "SĐT", "Email", "Địa chỉ", "Sản phẩm", "Danh mục", "Trạng thái", "Ngày đăng ký"]
+    const rows = filtered.map(r => [r.id, r.marketName, r.boothName, r.ownerName, r.phone, r.email, r.address, r.products, r.category, r.status === "approved" ? "Đã duyệt" : r.status === "rejected" ? "Từ chối" : "Chờ duyệt", r.submittedAt])
+    const csv = "﻿" + [header, ...rows].map(row => row.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n")
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url; a.download = "dang-ky-gian-hang.csv"; a.click()
+    URL.revokeObjectURL(url)
+    toast.success("Đã xuất file Excel thành công!")
+  }
+
+  const statusColor: Record<string, string> = {
+    pending:  "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
+    approved: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+    rejected: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400",
+  }
+  const statusLabel: Record<string, string> = { pending: "Chờ duyệt", approved: "Đã duyệt", rejected: "Từ chối" }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="font-display text-3xl font-bold text-foreground">Quản lý đăng ký</h1>
+          <p className="text-muted-foreground font-body text-sm">{registrations.length} đăng ký gian hàng</p>
+        </div>
+        <button onClick={exportCSV} className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-xl font-semibold font-body hover:bg-primary/80 transition-colors text-sm">
+          <FileDown size={15} /> Xuất Excel
+        </button>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        {[
+          { label: "Chờ duyệt", count: registrations.filter(r => r.status === "pending").length, color: "text-yellow-600", bg: "bg-yellow-50 dark:bg-yellow-900/20" },
+          { label: "Đã duyệt", count: registrations.filter(r => r.status === "approved").length, color: "text-green-600", bg: "bg-green-50 dark:bg-green-900/20" },
+          { label: "Từ chối", count: registrations.filter(r => r.status === "rejected").length, color: "text-red-500", bg: "bg-red-50 dark:bg-red-900/20" },
+        ].map(s => (
+          <div key={s.label} className={`${s.bg} rounded-2xl p-4 text-center`}>
+            <div className={`font-display text-3xl font-bold ${s.color}`}>{s.count}</div>
+            <div className="text-sm text-muted-foreground font-body">{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="bg-card rounded-2xl border border-border p-5">
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-5">
+          <div className="relative flex-1">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Tìm theo tên, mã đăng ký..." className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm font-body outline-none focus:border-primary" />
+          </div>
+          <select value={filterMarket} onChange={e => setFilterMarket(e.target.value)} className="px-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm font-body outline-none">
+            <option value="all">Tất cả chợ phiên</option>
+            {markets.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+          </select>
+          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="px-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm font-body outline-none">
+            <option value="all">Tất cả trạng thái</option>
+            <option value="pending">Chờ duyệt</option>
+            <option value="approved">Đã duyệt</option>
+            <option value="rejected">Từ chối</option>
+          </select>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm font-body">
+            <thead>
+              <tr className="border-b border-border">
+                {["Mã ĐK", "Tên gian hàng", "Chủ gian hàng", "Chợ phiên", "Danh mục", "Trạng thái", "Ngày ĐK", ""].map(h => (
+                  <th key={h} className="text-left py-3 px-3 text-muted-foreground font-medium text-xs uppercase tracking-wide whitespace-nowrap">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(r => (
+                <tr key={r.id} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
+                  <td className="py-3 px-3 font-mono text-xs font-bold text-foreground">{r.id}</td>
+                  <td className="py-3 px-3">
+                    <div className="font-medium text-foreground">{r.boothName}</div>
+                    <div className="text-xs text-muted-foreground">{r.products.slice(0, 30)}...</div>
+                  </td>
+                  <td className="py-3 px-3">
+                    <div className="font-medium text-foreground">{r.ownerName}</div>
+                    <div className="text-xs text-muted-foreground">{r.phone}</div>
+                  </td>
+                  <td className="py-3 px-3 text-muted-foreground text-xs max-w-[120px] truncate">{r.marketName}</td>
+                  <td className="py-3 px-3"><span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">{r.category}</span></td>
+                  <td className="py-3 px-3"><span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${statusColor[r.status]}`}>{statusLabel[r.status]}</span></td>
+                  <td className="py-3 px-3 text-muted-foreground text-xs whitespace-nowrap">{r.submittedAt}</td>
+                  <td className="py-3 px-3">
+                    <button onClick={() => setDetailReg(r)} className="px-3 py-1.5 text-xs font-semibold font-body bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors">Chi tiết</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {filtered.length === 0 && <EmptyState title="Không tìm thấy đăng ký" subtitle="Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm" />}
         </div>
       </div>
 
-      {showModal && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-card rounded-3xl border border-border p-8 w-full max-w-lg shadow-2xl" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between mb-6">
-              <h3 className="font-display text-2xl font-bold text-foreground">Thêm phiên chợ</h3>
-              <button onClick={() => setShowModal(false)} className="p-2 rounded-lg hover:bg-muted"><X size={18} /></button>
+      {/* Detail Modal */}
+      {detailReg && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setDetailReg(null)}>
+          <div className="bg-card rounded-3xl border border-border w-full max-w-lg shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-8 py-5 border-b border-border">
+              <div>
+                <h3 className="font-display text-xl font-bold text-foreground">Chi tiết đăng ký</h3>
+                <p className="text-xs text-muted-foreground font-body">{detailReg.id}</p>
+              </div>
+              <button onClick={() => setDetailReg(null)} className="p-2 rounded-lg hover:bg-muted"><X size={18} /></button>
             </div>
-            <div className="space-y-4">
-              {[{ label: "Tên phiên chợ", placeholder: "Chợ Phiên Ngok Bay #50" }, { label: "Ngày tổ chức", placeholder: "15/11/2025" }, { label: "Giờ tổ chức", placeholder: "06:00 - 12:00" }, { label: "Địa điểm", placeholder: "Làng văn hóa Kon Klor" }].map(f => (
-                <div key={f.label}>
-                  <label className="block text-sm font-medium text-foreground font-body mb-1.5">{f.label}</label>
-                  <input placeholder={f.placeholder} className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm font-body outline-none focus:border-primary" />
+            <div className="p-8 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className={`text-xs px-3 py-1 rounded-full font-semibold font-body ${statusColor[detailReg.status]}`}>{statusLabel[detailReg.status]}</span>
+                <span className="text-xs text-muted-foreground font-body">{detailReg.marketName}</span>
+              </div>
+              {[
+                { label: "Tên gian hàng", value: detailReg.boothName },
+                { label: "Họ và tên chủ", value: detailReg.ownerName },
+                { label: "Số điện thoại", value: detailReg.phone },
+                { label: "Email", value: detailReg.email },
+                { label: "Địa chỉ", value: detailReg.address },
+                { label: "Sản phẩm", value: detailReg.products },
+                { label: "Danh mục", value: detailReg.category },
+              ].map(row => (
+                <div key={row.label} className="flex gap-4">
+                  <span className="text-sm font-semibold text-muted-foreground font-body w-32 flex-shrink-0">{row.label}:</span>
+                  <span className="text-sm text-foreground font-body flex-1">{row.value}</span>
                 </div>
               ))}
-              <div className="border-2 border-dashed border-border rounded-xl p-6 text-center cursor-pointer hover:border-primary transition-colors">
-                <ImageIcon size={20} className="text-muted-foreground mx-auto mb-1" />
-                <p className="text-xs text-muted-foreground font-body">Upload banner phiên chợ</p>
+              {detailReg.note && (
+                <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-3">
+                  <p className="text-xs font-semibold text-red-600 font-body">Ghi chú: {detailReg.note}</p>
+                </div>
+              )}
+              <div className="flex gap-3 pt-2">
+                {detailReg.status === "pending" && (
+                  <>
+                    <button onClick={() => approve(detailReg.id)} className="flex-1 py-2.5 bg-green-600 text-white rounded-xl text-sm font-semibold font-body hover:bg-green-700 transition-colors flex items-center justify-center gap-2">
+                      <UserCheck size={14} /> Duyệt
+                    </button>
+                    <button onClick={() => reject(detailReg.id)} className="flex-1 py-2.5 bg-red-500 text-white rounded-xl text-sm font-semibold font-body hover:bg-red-600 transition-colors flex items-center justify-center gap-2">
+                      <UserX size={14} /> Từ chối
+                    </button>
+                  </>
+                )}
+                <button onClick={() => openEdit(detailReg)} className="flex-1 py-2.5 border border-border rounded-xl text-sm font-semibold font-body hover:bg-muted transition-colors flex items-center justify-center gap-2">
+                  <Edit size={14} /> Chỉnh sửa
+                </button>
               </div>
-              <div className="flex gap-3">
-                <button onClick={() => setShowModal(false)} className="flex-1 py-3 border border-border rounded-2xl text-sm font-semibold font-body hover:bg-muted">Hủy</button>
-                <button onClick={() => setShowModal(false)} className="flex-1 py-3 bg-primary text-primary-foreground rounded-2xl text-sm font-semibold font-body hover:bg-primary/80">Lưu</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Registration Modal */}
+      {editReg && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setEditReg(null)}>
+          <div className="bg-card rounded-3xl border border-border w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="sticky top-0 bg-card flex items-center justify-between px-8 py-5 border-b border-border rounded-t-3xl">
+              <h3 className="font-display text-xl font-bold text-foreground">Chỉnh sửa đăng ký</h3>
+              <button onClick={() => setEditReg(null)} className="p-2 rounded-lg hover:bg-muted"><X size={18} /></button>
+            </div>
+            <div className="p-8 space-y-4">
+              {[
+                { key: "boothName", label: "Tên gian hàng" },
+                { key: "ownerName", label: "Họ và tên" },
+                { key: "phone", label: "Số điện thoại" },
+                { key: "email", label: "Email" },
+                { key: "address", label: "Địa chỉ" },
+              ].map(f => (
+                <div key={f.key}>
+                  <label className="block text-sm font-semibold text-foreground font-body mb-1.5">{f.label}</label>
+                  <input value={(editForm as any)[f.key] || ""} onChange={e => setEditForm(ef => ({ ...ef, [f.key]: e.target.value }))} className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm font-body outline-none focus:border-primary" />
+                </div>
+              ))}
+              <div>
+                <label className="block text-sm font-semibold text-foreground font-body mb-1.5">Sản phẩm</label>
+                <textarea rows={2} value={editForm.products || ""} onChange={e => setEditForm(ef => ({ ...ef, products: e.target.value }))} className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm font-body outline-none focus:border-primary resize-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-foreground font-body mb-1.5">Danh mục</label>
+                <select value={editForm.category || ""} onChange={e => setEditForm(ef => ({ ...ef, category: e.target.value }))} className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm font-body outline-none">
+                  {PRODUCT_CATEGORIES_LIST.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button onClick={() => setEditReg(null)} className="flex-1 py-3 border border-border rounded-2xl text-sm font-semibold font-body hover:bg-muted transition-colors">Hủy</button>
+                <button onClick={saveEdit} className="flex-1 py-3 bg-primary text-primary-foreground rounded-2xl text-sm font-semibold font-body hover:bg-primary/80 transition-colors">Lưu thay đổi</button>
               </div>
             </div>
           </div>
@@ -2956,6 +3660,8 @@ export default function App() {
   const [cart, setCart]         = useState<any[]>([])
   const [user, setUser]         = useState<AuthUser | null>(null)
   const [heroSlides, setHeroSlides] = useState<HeroSlide[]>(DEFAULT_HERO_SLIDES)
+  const [markets, setMarkets] = useState<Market[]>(INITIAL_MARKETS)
+  const [registrations, setRegistrations] = useState<BoothRegistration[]>(INITIAL_REGISTRATIONS)
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode)
@@ -2972,6 +3678,7 @@ export default function App() {
   const cartCount = cart.reduce((acc, i) => acc + i.qty, 0)
 
   return (
+    <MarketContext.Provider value={{ markets, setMarkets, registrations, setRegistrations }}>
     <HeroContext.Provider value={{ slides: heroSlides, setSlides: setHeroSlides }}>
       <BrowserRouter>
         <Toaster
@@ -2987,6 +3694,7 @@ export default function App() {
                 <Route index          element={<AdminDashboard />} />
                 <Route path="san-pham"   element={<AdminProductPage />} />
                 <Route path="cho-phien"  element={<AdminMarketPage />} />
+                <Route path="dang-ky"    element={<AdminRegistrationPage />} />
                 <Route path="blog"       element={<AdminBlogPage />} />
                 <Route path="don-hang"   element={<AdminOrderPage />} />
                 <Route path="nguoi-dung" element={<AdminUserPage />} />
@@ -3006,7 +3714,8 @@ export default function App() {
                   <Route path="/tho-cam"         element={<ThoCamPage />} />
                   <Route path="/ocop"            element={<OCOPPage onAddCart={addToCart} />} />
                   <Route path="/van-hoa"         element={<VanHoaPage />} />
-                  <Route path="/lich-cho-phien"  element={<LichChoPhienPage />} />
+                  <Route path="/lich-cho-phien"      element={<LichChoPhienPage />} />
+                  <Route path="/lich-cho-phien/:id"  element={<MarketDetailPage />} />
                   <Route path="/gio-hang"        element={<CartPage cart={cart} setCart={setCart} />} />
                   <Route path="/thanh-toan"      element={<CheckoutPage cart={cart} />} />
                   <Route path="/dang-nhap"       element={<LoginPage onLogin={setUser} />} />
@@ -3019,5 +3728,6 @@ export default function App() {
         </div>
       </BrowserRouter>
     </HeroContext.Provider>
+    </MarketContext.Provider>
   )
 }
